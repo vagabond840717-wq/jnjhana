@@ -35,6 +35,10 @@
   --tr-out: #e07a5f;
   --tr-in: #f4a261;
   --tr-occupied: rgba(224,122,95,0.10);
+  /* 리브애니웨어 */
+  --lv-out: #a78bfa;
+  --lv-in: #c4b5fd;
+  --lv-occupied: rgba(167,139,250,0.10);
   --r: 8px;
   --r2: 14px;
 }
@@ -195,6 +199,14 @@ body {
 .c-tr-checkin  { background: rgba(244,162,97,0.22); color: var(--tr-in); }
 .c-tr-both {
   background: linear-gradient(90deg, rgba(224,122,95,0.3) 50%, rgba(244,162,97,0.25) 50%);
+  color: var(--text2);
+}
+/* 리브애니웨어 셀 스타일 */
+.c-lv-occupied { background: rgba(167,139,250,0.10); }
+.c-lv-checkout { background: rgba(167,139,250,0.28); color: var(--lv-out); }
+.c-lv-checkin  { background: rgba(196,181,253,0.22); color: var(--lv-in); }
+.c-lv-both {
+  background: linear-gradient(90deg, rgba(167,139,250,0.3) 50%, rgba(196,181,253,0.25) 50%);
   color: var(--text2);
 }
 .today-ring .cell-inner { outline: 1.5px solid var(--accent); outline-offset: -2px; border-radius: 5px; }
@@ -581,6 +593,11 @@ body {
   <div class="legend-item"><div class="legend-box" style="background:rgba(244,162,97,0.25);border:0.5px solid rgba(244,162,97,0.4);"></div>인</div>
   <div class="legend-item"><div class="legend-box" style="background:rgba(224,122,95,0.1);border:0.5px solid rgba(224,122,95,0.2);"></div>숙박</div>
   <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
+  <div class="legend-item" style="color:var(--lv-out);font-size:10px;font-weight:500;margin-right:2px;">🏡</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.3);border:0.5px solid rgba(167,139,250,0.5);"></div>아웃</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(196,181,253,0.25);border:0.5px solid rgba(196,181,253,0.4);"></div>인</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.1);border:0.5px solid rgba(167,139,250,0.2);"></div>숙박</div>
+  <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
   <div class="legend-today"></div><span style="font-size:11px;color:var(--text3);">오늘</span>
 </div>
 
@@ -631,13 +648,15 @@ body {
           <input class="ical-input" id="inputUrl" placeholder="✈ Airbnb iCal URL (webcal://...)" autocomplete="off">
           <input class="ical-input" id="inputBkUrl" placeholder="🏨 Booking.com iCal URL (webcal://...)" autocomplete="off">
           <input class="ical-input" id="inputTrUrl" placeholder="🌐 Trip.com iCal URL (webcal://...)" autocomplete="off">
+          <input class="ical-input" id="inputLvUrl" placeholder="🏡 리브애니웨어 iCal URL (webcal://...)" autocomplete="off">
         </div>
         <button class="add-btn" id="addRoomBtn">+ 호실 추가</button>
         <div style="height:10px;"></div>
         <div class="ical-hint">
           ✈ <strong style="color:#c8f07c">Airbnb</strong>: 앱 → 숙소 관리 → 달력 → ··· → 달력 내보내기<br>
           🏨 <strong style="color:#5b9ad8">Booking.com</strong>: Extranet → 객실 → 달력 동기화 → iCal 내보내기<br>
-          🌐 <strong style="color:#e07a5f">Trip.com</strong>: 파트너 센터 → 예약 → 달력 동기화 → iCal 내보내기
+          🌐 <strong style="color:#e07a5f">Trip.com</strong>: 파트너 센터 → 예약 → 달력 동기화 → iCal 내보내기<br>
+          🏡 <strong style="color:#a78bfa">리브애니웨어</strong>: 파트너 센터 → 숙소 관리 → 달력 동기화 → iCal 내보내기
         </div>
       </div>
       <div class="sheet-section">
@@ -663,7 +682,7 @@ function daysIn(y,m) { return new Date(y,m+1,0).getDate(); }
 
 // Storage — KV 서버 + localStorage 동시 저장
 async function saveRooms() {
-  const data = rooms.map(r=>({name:r.name,url:r.url,bkUrl:r.bkUrl||'',trUrl:r.trUrl||'',color:r.color}));
+  const data = rooms.map(r=>({name:r.name,url:r.url,bkUrl:r.bkUrl||'',trUrl:r.trUrl||'',lvUrl:r.lvUrl||'',color:r.color}));
   try { localStorage.setItem('hana_rooms', JSON.stringify(data)); } catch(e){}
   try {
     await fetch(`${PROXY_URL}/rooms`, {
@@ -681,7 +700,7 @@ async function loadRooms() {
     if (resp.ok) {
       const data = await resp.json();
       if (data && data.length > 0) {
-        rooms = data.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[] }));
+        rooms = data.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
         try { localStorage.setItem('hana_rooms', JSON.stringify(data)); } catch(e){}
         return;
       }
@@ -690,7 +709,7 @@ async function loadRooms() {
   // KV 실패시 localStorage 사용
   try {
     const d = JSON.parse(localStorage.getItem('hana_rooms')||'[]');
-    rooms = d.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[] }));
+    rooms = d.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
   } catch(e){ rooms=[]; }
 }
 
@@ -779,6 +798,26 @@ function parseIcalTrip(text) {
   return bookings;
 }
 
+// 리브애니웨어 iCal 파싱
+function parseIcalLv(text) {
+  const bookings = [];
+  const events = text.split('BEGIN:VEVENT');
+  for (let i = 1; i < events.length; i++) {
+    const ev = events[i];
+    const dtstart = ev.match(/DTSTART(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
+    const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
+    const summary = ev.match(/SUMMARY:(.*)/);
+    if (!dtstart || !dtend) continue;
+    const title = summary ? summary[1].trim().toLowerCase() : '';
+    if (title === 'not available' || title === 'closed' || title === '') continue;
+    const parseD = s => { const y=+s.slice(0,4),m=+s.slice(4,6)-1,d=+s.slice(6,8); return {y,m,d}; };
+    const s = parseD(dtstart[1]);
+    const e = parseD(dtend[1]);
+    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d, src:'lv' });
+  }
+  return bookings;
+}
+
 // 프록시를 통해 iCal 불러오기
 async function fetchIcal(room) {
   if (!room.url || room.url === '(iCal 미입력)' || room.url === '') return [];
@@ -816,17 +855,30 @@ async function fetchTrIcal(room) {
   } catch(e) { return []; }
 }
 
+async function fetchLvIcal(room) {
+  if (!room.lvUrl || room.lvUrl === '') return [];
+  if (PROXY_URL.includes('내아이디')) return [];
+  try {
+    const proxyReq = `${PROXY_URL}?url=${encodeURIComponent(room.lvUrl)}`;
+    const resp = await fetch(proxyReq);
+    if (!resp.ok) return [];
+    const text = await resp.text();
+    return parseIcalLv(text);
+  } catch(e) { return []; }
+}
+
 // 전체 호실 iCal 동기화
 async function syncAll() {
   const icon = document.getElementById('syncIcon');
   icon.classList.add('spin');
   document.getElementById('syncTime').textContent = '불러오는 중...';
-  const [abResults, bkResults, trResults] = await Promise.all([
+  const [abResults, bkResults, trResults, lvResults] = await Promise.all([
     Promise.all(rooms.map(r => fetchIcal(r))),
     Promise.all(rooms.map(r => fetchBkIcal(r))),
-    Promise.all(rooms.map(r => fetchTrIcal(r)))
+    Promise.all(rooms.map(r => fetchTrIcal(r))),
+    Promise.all(rooms.map(r => fetchLvIcal(r)))
   ]);
-  rooms.forEach((r,i) => { r.bookings = abResults[i]; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; });
+  rooms.forEach((r,i) => { r.bookings = abResults[i]; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; r.lvBookings = lvResults[i]; });
   icon.classList.remove('spin');
   const now = new Date();
   document.getElementById('syncTime').textContent =
@@ -871,28 +923,35 @@ function cellClsAndLbl(room, day, y, m) {
   const ab = cellTypeFor(room.bookings   || [], day, y, m);
   const bk = cellTypeFor(room.bkBookings || [], day, y, m);
   const tr = cellTypeFor(room.trBookings || [], day, y, m);
+  const lv = cellTypeFor(room.lvBookings || [], day, y, m);
 
   const abEmpty = ab === 'empty';
   const bkEmpty = bk === 'empty';
   const trEmpty = tr === 'empty';
+  const lvEmpty = lv === 'empty';
 
-  if (abEmpty && bkEmpty && trEmpty) return {cls:'c-empty', lbl:''};
+  if (abEmpty && bkEmpty && trEmpty && lvEmpty) return {cls:'c-empty', lbl:''};
 
   // 단독 플랫폼
-  if (bkEmpty && trEmpty) {
+  if (bkEmpty && trEmpty && lvEmpty) {
     const txt = ioTxt(ab);
     if (!txt) return {cls:'c-occupied', lbl:''};
     return {cls:'c-'+ab, lbl:`<span class="cell-icon">✈</span><span class="cell-txt">${txt}</span>`};
   }
-  if (abEmpty && trEmpty) {
+  if (abEmpty && trEmpty && lvEmpty) {
     const txt = ioTxt(bk);
     if (!txt) return {cls:'c-bk-occupied', lbl:''};
     return {cls:'c-bk-'+bk, lbl:`<span class="cell-icon">🏨</span><span class="cell-txt">${txt}</span>`};
   }
-  if (abEmpty && bkEmpty) {
+  if (abEmpty && bkEmpty && lvEmpty) {
     const txt = ioTxt(tr);
     if (!txt) return {cls:'c-tr-occupied', lbl:''};
     return {cls:'c-tr-'+tr, lbl:`<span class="cell-icon">🌐</span><span class="cell-txt">${txt}</span>`};
+  }
+  if (abEmpty && bkEmpty && trEmpty) {
+    const txt = ioTxt(lv);
+    if (!txt) return {cls:'c-lv-occupied', lbl:''};
+    return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${txt}</span>`};
   }
 
   // 복수 플랫폼: 아이콘+텍스트 조합
@@ -900,6 +959,7 @@ function cellClsAndLbl(room, day, y, m) {
   const abTxt = ioTxt(ab);
   const bkTxt = ioTxt(bk);
   const trTxt = ioTxt(tr);
+  const lvTxt = ioTxt(lv);
   if (!abEmpty) parts.push(abTxt
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#f0b35b;"><span>✈</span><span>${abTxt}</span></span>`
     : `<span style="font-size:7px;color:rgba(200,240,124,0.5);">✈</span>`);
@@ -909,6 +969,9 @@ function cellClsAndLbl(room, day, y, m) {
   if (!trEmpty) parts.push(trTxt
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#e07a5f;"><span>🌐</span><span>${trTxt}</span></span>`
     : `<span style="font-size:7px;color:rgba(224,122,95,0.5);">🌐</span>`);
+  if (!lvEmpty) parts.push(lvTxt
+    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${lvTxt}</span></span>`
+    : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`);
   return {cls:'c-dual', lbl: parts.join('')};
 }
 
@@ -946,8 +1009,9 @@ function updateTodayBanner() {
       const ab = cellTypeFor(r.bookings||[], t.d, t.y, t.m);
       const bk = cellTypeFor(r.bkBookings||[], t.d, t.y, t.m);
       const tr = cellTypeFor(r.trBookings||[], t.d, t.y, t.m);
-      if (ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both') outs.push(r.name);
-      if (ab==='checkin' ||ab==='both'||bk==='checkin' ||bk==='both'||tr==='checkin' ||tr==='both') ins.push(r.name);
+      const lv = cellTypeFor(r.lvBookings||[], t.d, t.y, t.m);
+      if (ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'||lv==='checkout'||lv==='both') outs.push(r.name);
+      if (ab==='checkin' ||ab==='both'||bk==='checkin' ||bk==='both'||tr==='checkin' ||tr==='both'||lv==='checkin' ||lv==='both') ins.push(r.name);
     }
   }
   const dname = DAY_KO[new Date(t.y,t.m,t.d).getDay()];
@@ -1071,7 +1135,8 @@ function renderWeek() {
         const ab=cellTypeFor(r.bookings||[],d,curY,curM);
         const bk=cellTypeFor(r.bkBookings||[],d,curY,curM);
         const tr=cellTypeFor(r.trBookings||[],d,curY,curM);
-        if(ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'){
+        const lv=cellTypeFor(r.lvBookings||[],d,curY,curM);
+        if(ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'||lv==='checkout'||lv==='both'){
           if(!coMap[d]) coMap[d]=[];
           coMap[d].push(r.name);
         }
@@ -1102,8 +1167,8 @@ function renderRoomList() {
   }
 
   function roomItemHtml(r, i) {
-    const linked = r.url || r.bkUrl || r.trUrl;
-    const urlLabel = [r.url?'✈ 에어비앤비':'', r.bkUrl?'🏨 부킹닷컴':'', r.trUrl?'🌐 트립닷컴':''].filter(Boolean).join(' · ') || '미연동';
+    const linked = r.url || r.bkUrl || r.trUrl || r.lvUrl;
+    const urlLabel = [r.url?'✈ 에어비앤비':'', r.bkUrl?'🏨 부킹닷컴':'', r.trUrl?'🌐 트립닷컴':'', r.lvUrl?'🏡 리브애니웨어':''].filter(Boolean).join(' · ') || '미연동';
     return `<div class="room-item" draggable="true" data-idx="${i}">
       <div class="drag-handle">⠿</div>
       <div class="room-item-dot" style="background:${r.color}"></div>
@@ -1136,6 +1201,7 @@ function renderRoomList() {
         <input class="ical-input" id="editUrl_${idx}" value="${r.url||''}" placeholder="✈ Airbnb iCal URL" autocomplete="off">
         <input class="ical-input" id="editBkUrl_${idx}" value="${r.bkUrl||''}" placeholder="🏨 Booking.com iCal URL" autocomplete="off">
         <input class="ical-input" id="editTrUrl_${idx}" value="${r.trUrl||''}" placeholder="🌐 Trip.com iCal URL" autocomplete="off">
+        <input class="ical-input" id="editLvUrl_${idx}" value="${r.lvUrl||''}" placeholder="🏡 리브애니웨어 iCal URL" autocomplete="off">
         <div class="room-edit-actions">
           <button class="room-edit-save" data-save="${idx}">저장</button>
           <button class="room-edit-cancel">취소</button>
@@ -1151,20 +1217,23 @@ function renderRoomList() {
         const newUrl   = document.getElementById(`editUrl_${idx}`).value.trim();
         const newBkUrl = document.getElementById(`editBkUrl_${idx}`).value.trim();
         const newTrUrl = document.getElementById(`editTrUrl_${idx}`).value.trim();
+        const newLvUrl = document.getElementById(`editLvUrl_${idx}`).value.trim();
         if (!newName) { document.getElementById(`editName_${idx}`).focus(); return; }
         rooms[idx].name  = newName;
         rooms[idx].url   = newUrl;
         rooms[idx].bkUrl = newBkUrl;
         rooms[idx].trUrl = newTrUrl;
+        rooms[idx].lvUrl = newLvUrl;
         saveRooms();
         form.remove();
         renderRoomList();
         render();
         // 변경된 호실만 재동기화
-        Promise.all([fetchIcal(rooms[idx]), fetchBkIcal(rooms[idx]), fetchTrIcal(rooms[idx])]).then(([ab, bk, tr]) => {
+        Promise.all([fetchIcal(rooms[idx]), fetchBkIcal(rooms[idx]), fetchTrIcal(rooms[idx]), fetchLvIcal(rooms[idx])]).then(([ab, bk, tr, lv]) => {
           rooms[idx].bookings   = ab;
           rooms[idx].bkBookings = bk;
           rooms[idx].trBookings = tr;
+          rooms[idx].lvBookings = lv;
           render();
         });
       };
@@ -1394,6 +1463,8 @@ async function openDetail(ri, y, m, d) {
   const bkBks = findAllBookingsIn(r.bkBookings || [], y, m, d);
   // 트립닷컴: 이 날짜에 속하는 모든 예약
   const trBks = findAllBookingsIn(r.trBookings || [], y, m, d);
+  // 리브애니웨어: 이 날짜에 속하는 모든 예약
+  const lvBks = findAllBookingsIn(r.lvBookings || [], y, m, d);
 
   // 헤더
   document.getElementById('detailTitle').innerHTML =
@@ -1407,12 +1478,14 @@ async function openDetail(ri, y, m, d) {
     const isOut = b.coutY===selY && b.coutM===selM && b.coutD===selD;
     const isIn  = b.cinY===selY  && b.cinM===selM  && b.cinD===selD;
     const roleBg   = isOut ? 'rgba(240,179,91,0.12)' : isIn ? 'rgba(110,207,143,0.12)' : 'transparent';
-    const roleBorder = isOut ? 'rgba(240,179,91,0.4)' : isIn ? 'rgba(110,207,143,0.4)' : (platform==='booking' ? 'rgba(91,154,216,0.3)' : platform==='trip' ? 'rgba(224,122,95,0.3)' : 'rgba(255,255,255,0.1)');
+    const roleBorder = isOut ? 'rgba(240,179,91,0.4)' : isIn ? 'rgba(110,207,143,0.4)' : (platform==='booking' ? 'rgba(91,154,216,0.3)' : platform==='trip' ? 'rgba(224,122,95,0.3)' : platform==='lv' ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.1)');
     const platformBadge = platform === 'airbnb'
       ? `<span style="color:var(--text3);font-size:10px;">✈ Airbnb</span>`
       : platform === 'booking'
       ? `<span style="color:var(--text3);font-size:10px;">🏨 Booking</span>`
-      : `<span style="color:var(--text3);font-size:10px;">🌐 Trip.com</span>`;
+      : platform === 'trip'
+      ? `<span style="color:var(--text3);font-size:10px;">🌐 Trip.com</span>`
+      : `<span style="color:var(--text3);font-size:10px;">🏡 리브애니웨어</span>`;
     const roleTag = isOut
       ? `<span style="font-size:13px;font-weight:700;color:var(--out);letter-spacing:0.02em;">체크아웃</span>`
       : isIn
@@ -1439,14 +1512,14 @@ async function openDetail(ri, y, m, d) {
   abBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'airbnb', y, m, d));
   bkBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'booking', y, m, d));
   trBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'trip', y, m, d));
-  if (!abBks.length && !bkBks.length && !trBks.length) bkInfoHtml = `<div class="no-bk">이 날짜에 예약 없음</div>`;
+  lvBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'lv', y, m, d));
+  if (!abBks.length && !bkBks.length && !trBks.length && !lvBks.length) bkInfoHtml = `<div class="no-bk">이 날짜에 예약 없음</div>`;
   bkBoxEl.innerHTML = bkInfoHtml;
 
   // detailKeys 구성 (예약별 메모/비밀번호 분리)
   detailKeys = [];
   abBks.forEach((b, idx) => {
     const key = bkKey(r.name, b);
-    // 이 날짜가 해당 예약의 체크아웃일이면 '아웃', 체크인일이면 '인', 숙박 중이면 null
     const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
     const role  = isOut ? 'out' : isIn ? 'in' : null;
@@ -1465,6 +1538,13 @@ async function openDetail(ri, y, m, d) {
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
     const role  = isOut ? 'out' : isIn ? 'in' : null;
     detailKeys.push({key, role, platform:'trip'});
+  });
+  lvBks.forEach((b, idx) => {
+    const key = bkKey(r.name, b) + '_lv';
+    const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
+    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
+    const role  = isOut ? 'out' : isIn ? 'in' : null;
+    detailKeys.push({key, role, platform:'lv'});
   });
   if (!detailKeys.length) {
     const fallback = `${r.name}|${y}${String(m+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
@@ -1642,7 +1722,7 @@ function renderMemoUI() {
 
     let html = `<div class="memo-bk-section" data-ki="${ki}" style="flex:1;min-width:0;">`;
     if (detailKeys.length > 1 && (role === 'out' || role === 'in')) {
-      html += `<div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:8px;">${labelText}${platform==='booking'?' 🏨':platform==='trip'?' 🌐':''}</div>`;
+      html += `<div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:8px;">${labelText}${platform==='booking'?' 🏨':platform==='trip'?' 🌐':platform==='lv'?' 🏡':''}</div>`;
     }
     // 기존 메모 목록
     if (memos.length) {
@@ -1782,12 +1862,14 @@ document.getElementById('addRoomBtn').onclick = () => {
   const colorIdx = rooms.length % COLORS.length;
   const bkUrl = document.getElementById('inputBkUrl').value.trim();
   const trUrl = document.getElementById('inputTrUrl').value.trim();
-  rooms.push({ name, url: url||'', bkUrl: bkUrl||'', trUrl: trUrl||'', color: COLORS[colorIdx], bookings: [], bkBookings: [], trBookings: [] });
+  const lvUrl = document.getElementById('inputLvUrl').value.trim();
+  rooms.push({ name, url: url||'', bkUrl: bkUrl||'', trUrl: trUrl||'', lvUrl: lvUrl||'', color: COLORS[colorIdx], bookings: [], bkBookings: [], trBookings: [], lvBookings: [] });
   saveRooms();
   document.getElementById('inputName').value='';
   document.getElementById('inputUrl').value='';
   document.getElementById('inputBkUrl').value='';
   document.getElementById('inputTrUrl').value='';
+  document.getElementById('inputLvUrl').value='';
   render(); renderRoomList();
   syncAll();
 };
@@ -1800,7 +1882,7 @@ async function init() {
   await loadRooms();
   if (!rooms.length) {
     const defaults = ['302호','402호','501호','503호','601호','603호','701호','702호','703호'];
-    defaults.forEach((name,i) => rooms.push({name, url:'', bkUrl:'', trUrl:'', color:COLORS[i], bookings:[], bkBookings:[], trBookings:[]}));
+    defaults.forEach((name,i) => rooms.push({name, url:'', bkUrl:'', trUrl:'', lvUrl:'', color:COLORS[i], bookings:[], bkBookings:[], trBookings:[], lvBookings:[]}));
     await saveRooms();
   }
   render();
