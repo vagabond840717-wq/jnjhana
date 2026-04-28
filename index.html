@@ -672,6 +672,8 @@ const COLORS = ['#c8f07c','#6ecf8f','#5bc8d8','#7fa8f5','#c07aee','#f07cc8','#f0
 const DAY_KO = ['일','월','화','수','목','금','토'];
 const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
+const MONTHS_TO_SHOW = 6; // ← 여기서 표시 개월 수 조절 (3→6)
+
 let curY, curM, viewMode = 'month';
 let rooms = [];
 
@@ -694,7 +696,6 @@ async function saveRooms() {
 }
 
 async function loadRooms() {
-  // 먼저 KV에서 불러오기
   try {
     const resp = await fetch(`${PROXY_URL}/rooms`);
     if (resp.ok) {
@@ -706,14 +707,12 @@ async function loadRooms() {
       }
     }
   } catch(e){}
-  // KV 실패시 localStorage 사용
   try {
     const d = JSON.parse(localStorage.getItem('hana_rooms')||'[]');
     rooms = d.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
   } catch(e){ rooms=[]; }
 }
 
-// iCal 텍스트 파싱 → {cin, cout} 배열
 function parseIcal(text) {
   const bookings = [];
   const events = text.split('BEGIN:VEVENT');
@@ -723,7 +722,6 @@ function parseIcal(text) {
     const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
     const summary = ev.match(/SUMMARY:(.*)/);
     if (!dtstart || !dtend) continue;
-    // Airbnb는 예약 없는 날도 'Not available'로 표시 — 실제 예약만 필터
     const title = summary ? summary[1].trim().toLowerCase() : '';
     if (title === 'not available' || title === 'airbnb (not available)') continue;
     const parseD = s => {
@@ -737,28 +735,6 @@ function parseIcal(text) {
   return bookings;
 }
 
-// Booking.com iCal 파싱 (closed 상태 포함, 실제 예약만)
-function parseIcalBooking(text) {
-  const bookings = [];
-  const events = text.split('BEGIN:VEVENT');
-  for (let i = 1; i < events.length; i++) {
-    const ev = events[i];
-    const dtstart = ev.match(/DTSTART(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const summary = ev.match(/SUMMARY:(.*)/);
-    if (!dtstart || !dtend) continue;
-    const title = summary ? summary[1].trim().toLowerCase() : '';
-    // Booking.com: 'closed' 제외, 실제 예약은 게스트 이름 또는 'reservation' 등
-    if (title === 'closed' || title === 'not available' || title === '') continue;
-    const parseD = s => { const y=+s.slice(0,4),m=+s.slice(4,6)-1,d=+s.slice(6,8); return {y,m,d}; };
-    const s = parseD(dtstart[1]);
-    const e = parseD(dtend[1]);
-    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d, src:'booking' });
-  }
-  return bookings;
-}
-
-// Booking.com iCal 파싱 (closed 제외, 실제 게스트 예약만)
 function parseIcalBooking(text) {
   const bookings = [];
   const events = text.split('BEGIN:VEVENT');
@@ -778,7 +754,6 @@ function parseIcalBooking(text) {
   return bookings;
 }
 
-// Trip.com iCal 파싱
 function parseIcalTrip(text) {
   const bookings = [];
   const events = text.split('BEGIN:VEVENT');
@@ -798,7 +773,6 @@ function parseIcalTrip(text) {
   return bookings;
 }
 
-// 리브애니웨어 iCal 파싱
 function parseIcalLv(text) {
   const bookings = [];
   const events = text.split('BEGIN:VEVENT');
@@ -818,56 +792,42 @@ function parseIcalLv(text) {
   return bookings;
 }
 
-// 프록시를 통해 iCal 불러오기
 async function fetchIcal(room) {
-  if (!room.url || room.url === '(iCal 미입력)' || room.url === '') return [];
-  if (PROXY_URL.includes('내아이디')) return []; // 프록시 미설정
+  if (!room.url || room.url === '') return [];
   try {
-    const proxyReq = `${PROXY_URL}?url=${encodeURIComponent(room.url)}`;
-    const resp = await fetch(proxyReq);
+    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.url)}`);
     if (!resp.ok) return [];
-    const text = await resp.text();
-    return parseIcal(text);
+    return parseIcal(await resp.text());
   } catch(e) { return []; }
 }
 
 async function fetchBkIcal(room) {
   if (!room.bkUrl || room.bkUrl === '') return [];
-  if (PROXY_URL.includes('내아이디')) return [];
   try {
-    const proxyReq = `${PROXY_URL}?url=${encodeURIComponent(room.bkUrl)}`;
-    const resp = await fetch(proxyReq);
+    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.bkUrl)}`);
     if (!resp.ok) return [];
-    const text = await resp.text();
-    return parseIcalBooking(text);
+    return parseIcalBooking(await resp.text());
   } catch(e) { return []; }
 }
 
 async function fetchTrIcal(room) {
   if (!room.trUrl || room.trUrl === '') return [];
-  if (PROXY_URL.includes('내아이디')) return [];
   try {
-    const proxyReq = `${PROXY_URL}?url=${encodeURIComponent(room.trUrl)}`;
-    const resp = await fetch(proxyReq);
+    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.trUrl)}`);
     if (!resp.ok) return [];
-    const text = await resp.text();
-    return parseIcalTrip(text);
+    return parseIcalTrip(await resp.text());
   } catch(e) { return []; }
 }
 
 async function fetchLvIcal(room) {
   if (!room.lvUrl || room.lvUrl === '') return [];
-  if (PROXY_URL.includes('내아이디')) return [];
   try {
-    const proxyReq = `${PROXY_URL}?url=${encodeURIComponent(room.lvUrl)}`;
-    const resp = await fetch(proxyReq);
+    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.lvUrl)}`);
     if (!resp.ok) return [];
-    const text = await resp.text();
-    return parseIcalLv(text);
+    return parseIcalLv(await resp.text());
   } catch(e) { return []; }
 }
 
-// 전체 호실 iCal 동기화
 async function syncAll() {
   const icon = document.getElementById('syncIcon');
   icon.classList.add('spin');
@@ -886,10 +846,7 @@ async function syncAll() {
   render();
 }
 
-// src: 'airbnb' | 'booking'
 function cellTypeFor(bookings, day, y, m) {
-  y = y !== undefined ? y : curY;
-  m = m !== undefined ? m : curM;
   let occupied=false, isOut=false, isIn=false;
   const cur = new Date(y, m, day);
   for (const bk of bookings) {
@@ -910,8 +867,6 @@ function cellType(room, day, y, m) {
   return cellTypeFor(room.bookings || [], day, y, m);
 }
 
-// 에어비앤비+부킹닷컴 합산 셀 CSS 클래스 계산
-// 인/아웃 텍스트
 function ioTxt(ct) {
   if (ct==='checkout') return '아웃';
   if (ct==='checkin')  return '인';
@@ -932,7 +887,6 @@ function cellClsAndLbl(room, day, y, m) {
 
   if (abEmpty && bkEmpty && trEmpty && lvEmpty) return {cls:'c-empty', lbl:''};
 
-  // 단독 플랫폼
   if (bkEmpty && trEmpty && lvEmpty) {
     const txt = ioTxt(ab);
     if (!txt) return {cls:'c-occupied', lbl:''};
@@ -954,23 +908,18 @@ function cellClsAndLbl(room, day, y, m) {
     return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${txt}</span>`};
   }
 
-  // 복수 플랫폼: 아이콘+텍스트 조합
   const parts = [];
-  const abTxt = ioTxt(ab);
-  const bkTxt = ioTxt(bk);
-  const trTxt = ioTxt(tr);
-  const lvTxt = ioTxt(lv);
-  if (!abEmpty) parts.push(abTxt
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#f0b35b;"><span>✈</span><span>${abTxt}</span></span>`
+  if (!abEmpty) parts.push(ioTxt(ab)
+    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#f0b35b;"><span>✈</span><span>${ioTxt(ab)}</span></span>`
     : `<span style="font-size:7px;color:rgba(200,240,124,0.5);">✈</span>`);
-  if (!bkEmpty) parts.push(bkTxt
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#5b9ad8;"><span>🏨</span><span>${bkTxt}</span></span>`
+  if (!bkEmpty) parts.push(ioTxt(bk)
+    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#5b9ad8;"><span>🏨</span><span>${ioTxt(bk)}</span></span>`
     : `<span style="font-size:7px;color:rgba(91,154,216,0.5);">🏨</span>`);
-  if (!trEmpty) parts.push(trTxt
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#e07a5f;"><span>🌐</span><span>${trTxt}</span></span>`
+  if (!trEmpty) parts.push(ioTxt(tr)
+    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#e07a5f;"><span>🌐</span><span>${ioTxt(tr)}</span></span>`
     : `<span style="font-size:7px;color:rgba(224,122,95,0.5);">🌐</span>`);
-  if (!lvEmpty) parts.push(lvTxt
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${lvTxt}</span></span>`
+  if (!lvEmpty) parts.push(ioTxt(lv)
+    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${ioTxt(lv)}</span></span>`
     : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`);
   return {cls:'c-dual', lbl: parts.join('')};
 }
@@ -998,7 +947,7 @@ function renderMonthBlock(y, m) {
     }
     html += '</tr>';
   }
-  return html;
+  return html + '</tbody></table></div></div>';
 }
 
 function updateTodayBanner() {
@@ -1043,9 +992,9 @@ function renderMonth() {
   }
   const t = today();
   const months = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < MONTHS_TO_SHOW; i++) {
     let y = curY, m = curM + i;
-    if (m > 11) { m -= 12; y++; }
+    while (m > 11) { m -= 12; y++; }
     months.push({y, m});
   }
 
@@ -1128,7 +1077,6 @@ function renderWeek() {
     }
     html+='</tbody></table></div>';
 
-    // Cleaning cards
     const coMap={};
     for (const d of week) {
       for (const r of rooms) {
@@ -1184,16 +1132,13 @@ function renderRoomList() {
   list.innerHTML = `<div class="reorder-hint">⠿ 핸들을 드래그해서 순서 변경</div>` +
     rooms.map((r,i) => roomItemHtml(r,i)).join('');
 
-  // 수정 버튼 클릭 → 해당 room-item 자리에 인라인 폼 삽입
   list.querySelectorAll('.room-edit-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const idx = +btn.dataset.edit;
       const r = rooms[idx];
-      // 기존 열린 폼 닫기
       const existing = list.querySelector('.room-edit-form');
       if (existing) existing.remove();
-      // 수정 폼 생성
       const form = document.createElement('div');
       form.className = 'room-edit-form';
       form.innerHTML = `
@@ -1206,7 +1151,6 @@ function renderRoomList() {
           <button class="room-edit-save" data-save="${idx}">저장</button>
           <button class="room-edit-cancel">취소</button>
         </div>`;
-      // room-item 바로 아래에 삽입
       const roomItem = btn.closest('.room-item');
       roomItem.after(form);
       form.querySelector(`#editName_${idx}`).focus();
@@ -1228,7 +1172,6 @@ function renderRoomList() {
         form.remove();
         renderRoomList();
         render();
-        // 변경된 호실만 재동기화
         Promise.all([fetchIcal(rooms[idx]), fetchBkIcal(rooms[idx]), fetchTrIcal(rooms[idx]), fetchLvIcal(rooms[idx])]).then(([ab, bk, tr, lv]) => {
           rooms[idx].bookings   = ab;
           rooms[idx].bkBookings = bk;
@@ -1268,7 +1211,6 @@ function renderRoomList() {
     });
   });
 
-  // 터치 드래그 (모바일)
   let touchSrcIdx = null;
   items.forEach(item => {
     item.addEventListener('touchstart', e => {
@@ -1315,9 +1257,9 @@ function renderMulti() {
     return `<div class="empty-state"><div class="big">🏠</div><strong>호실이 없어요</strong><br>오른쪽 상단 ☰ 를 눌러 추가하세요.</div>`;
   }
   let html = '';
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < MONTHS_TO_SHOW; i++) {
     let y = curY, m = curM + i;
-    if (m > 11) { m -= 12; y++; }
+    while (m > 11) { m -= 12; y++; }
     html += renderMonthBlock(y, m);
   }
   return html;
@@ -1339,24 +1281,17 @@ function render() {
 }
 
 function scrollToToday() {
-  // 오늘이 현재 보이는 달에 포함될 때만 스크롤
-  const t = today();
-  // month/multi 뷰: 가로 스크롤 (today-ring 셀로)
-  // week 뷰: 해당 주 블록으로 세로 스크롤
   requestAnimationFrame(() => {
-    // 가로 스크롤: today-ring 셀 찾기
     const todayCell = document.querySelector('.today-ring');
     if (todayCell) {
       const scrollEl = todayCell.closest('.cal-scroll');
       if (scrollEl) {
         const cellRect = todayCell.getBoundingClientRect();
         const scrollRect = scrollEl.getBoundingClientRect();
-        // 셀이 스크롤 영역 왼쪽에서 1/3 지점에 오도록
         const offset = cellRect.left - scrollRect.left - scrollRect.width * 0.25;
         scrollEl.scrollBy({ left: offset, behavior: 'smooth' });
       }
     }
-    // week 뷰: 오늘 날짜가 포함된 week-block 세로 스크롤
     if (viewMode === 'week') {
       const todayHd = document.querySelector('.today-hd');
       if (todayHd) {
@@ -1367,14 +1302,10 @@ function scrollToToday() {
   });
 }
 
-// ── DETAIL PANEL ──
-
-// 예약 식별자: "호실명|YYYYMMDD(체크인)"
 function bkKey(roomName, bk) {
   return `${roomName}|${bk.cinY}${String(bk.cinM+1).padStart(2,'0')}${String(bk.cinD).padStart(2,'0')}`;
 }
 
-// 날짜가 속한 예약 찾기 (배열 직접) - 단일
 function findBookingIn(bookings, y, m, d) {
   const cur = new Date(y, m, d);
   for (const bk of bookings) {
@@ -1385,7 +1316,6 @@ function findBookingIn(bookings, y, m, d) {
   return null;
 }
 
-// 날짜가 속한 모든 예약 찾기 (배열 직접) - 복수
 function findAllBookingsIn(bookings, y, m, d) {
   const cur = new Date(y, m, d);
   return bookings.filter(bk => {
@@ -1395,12 +1325,10 @@ function findAllBookingsIn(bookings, y, m, d) {
   });
 }
 
-// 날짜가 속한 예약 찾기 - 단일
 function findBooking(room, y, m, d) {
   return findBookingIn(room.bookings || [], y, m, d);
 }
 
-// 날짜가 속한 모든 예약 찾기 - 복수
 function findAllBookings(room, y, m, d) {
   return findAllBookingsIn(room.bookings || [], y, m, d);
 }
@@ -1414,7 +1342,6 @@ function dateStr(y,m,d) {
   return `${y}.${String(m+1).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
 }
 
-// localStorage + KV 동시 저장
 function getExtra(key) {
   try { return JSON.parse(localStorage.getItem('hana_ex_'+key) || 'null') || {passwords:[],memos:[]}; } catch(e) { return {passwords:[],memos:[]}; }
 }
@@ -1452,25 +1379,17 @@ function attachCellClicks() {
   });
 }
 
-// ── DETAIL PANEL ──
-
 async function openDetail(ri, y, m, d) {
   const r = rooms[ri];
 
-  // 에어비앤비: 이 날짜에 속하는 모든 예약 (both 날짜면 2개)
   const abBks = findAllBookings(r, y, m, d);
-  // 부킹닷컴: 이 날짜에 속하는 모든 예약
   const bkBks = findAllBookingsIn(r.bkBookings || [], y, m, d);
-  // 트립닷컴: 이 날짜에 속하는 모든 예약
   const trBks = findAllBookingsIn(r.trBookings || [], y, m, d);
-  // 리브애니웨어: 이 날짜에 속하는 모든 예약
   const lvBks = findAllBookingsIn(r.lvBookings || [], y, m, d);
 
-  // 헤더
   document.getElementById('detailTitle').innerHTML =
     `<span class="room-badge">${r.name}</span>${dateStr(y,m,d)}`;
 
-  // 예약 정보 블록
   const bkBoxEl = document.getElementById('detailBkInfo');
   let bkInfoHtml = '';
   function bkInfoBlock(b, platform, selY, selM, selD) {
@@ -1491,7 +1410,6 @@ async function openDetail(ri, y, m, d) {
       : isIn
       ? `<span style="font-size:13px;font-weight:700;color:var(--in);letter-spacing:0.02em;">체크인</span>`
       : `<span style="font-size:13px;font-weight:500;color:var(--text2);">숙박중</span>`;
-    // 날짜 포맷: MM.DD 형식으로 짧게
     const cinShort  = `${String(b.cinM+1).padStart(2,'0')}.${String(b.cinD).padStart(2,'0')}`;
     const coutShort = `${String(b.coutM+1).padStart(2,'0')}.${String(b.coutD).padStart(2,'0')}`;
     return `<div class="bk-info-box" style="background:${roleBg};border-color:${roleBorder};${platform==='booking'?'margin-top:8px;':''}">
@@ -1516,70 +1434,48 @@ async function openDetail(ri, y, m, d) {
   if (!abBks.length && !bkBks.length && !trBks.length && !lvBks.length) bkInfoHtml = `<div class="no-bk">이 날짜에 예약 없음</div>`;
   bkBoxEl.innerHTML = bkInfoHtml;
 
-  // detailKeys 구성 (예약별 메모/비밀번호 분리)
   detailKeys = [];
-  abBks.forEach((b, idx) => {
+  abBks.forEach((b) => {
     const key = bkKey(r.name, b);
     const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    const role  = isOut ? 'out' : isIn ? 'in' : null;
-    detailKeys.push({key, role, platform:'airbnb'});
+    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'airbnb'});
   });
-  bkBks.forEach((b, idx) => {
+  bkBks.forEach((b) => {
     const key = bkKey(r.name, b) + '_bk';
     const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    const role  = isOut ? 'out' : isIn ? 'in' : null;
-    detailKeys.push({key, role, platform:'booking'});
+    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'booking'});
   });
-  trBks.forEach((b, idx) => {
+  trBks.forEach((b) => {
     const key = bkKey(r.name, b) + '_tr';
     const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    const role  = isOut ? 'out' : isIn ? 'in' : null;
-    detailKeys.push({key, role, platform:'trip'});
+    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'trip'});
   });
-  lvBks.forEach((b, idx) => {
+  lvBks.forEach((b) => {
     const key = bkKey(r.name, b) + '_lv';
     const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    const role  = isOut ? 'out' : isIn ? 'in' : null;
-    detailKeys.push({key, role, platform:'lv'});
+    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'lv'});
   });
   if (!detailKeys.length) {
     const fallback = `${r.name}|${y}${String(m+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
     detailKeys.push({key: fallback, role: null, platform:'none'});
   }
 
-  // 비밀번호용 detailKey: 첫 번째 에어비앤비 예약
   detailKey = detailKeys[0].key;
 
   document.getElementById('detailPanel').classList.add('open');
-  document.getElementById('pwEditRow') && (document.getElementById('pwEditRow').style.display = 'none');
 
-  // 비밀번호 + 메모: KV에서 선로딩 후 동기 렌더링
   await Promise.all(detailKeys.map(({key}) => loadExtra(key)));
   renderPwUI();
   renderMemoUI();
 }
 
-// 인/아웃 구분 뱃지 HTML
-function roleBadge(role, platform) {
-  if (role === 'out') return `<span style="font-size:11px;font-weight:600;color:var(--out);">아웃</span>`;
-  if (role === 'in')  return `<span style="font-size:11px;font-weight:600;color:var(--in);">인</span>`;
-  return '';
-}
-
 function renderPwUI() {
   const body = document.getElementById('pwSectionBody');
 
-  // 아웃/인 그룹으로 분리
-  const outKeys = detailKeys.filter(k => k.role === 'out' || (detailKeys.length === 1 && k.role === null));
-  const inKeys  = detailKeys.filter(k => k.role === 'in');
-  // role=null이면서 단일이 아닌 경우도 처리
-  const nullKeys = detailKeys.filter(k => k.role === null && detailKeys.length > 1);
-
-  // 단일 비밀번호 박스 HTML 생성
   function pwBox(ki, role) {
     const {key, platform} = detailKeys[ki];
     const extra = getExtra(key);
@@ -1607,9 +1503,9 @@ function renderPwUI() {
     </div>`;
   }
 
-  // 아웃/인 나란히 OR 단일 표시
   const hasOut = detailKeys.some(k => k.role === 'out');
   const hasIn  = detailKeys.some(k => k.role === 'in');
+  const nullKeys = detailKeys.filter(k => k.role === null && detailKeys.length > 1);
 
   let html = '';
   if (hasOut || hasIn) {
@@ -1618,20 +1514,16 @@ function renderPwUI() {
       if (role === 'out' || role === 'in') html += pwBox(ki, role);
     });
     html += `</div>`;
-    // null role이 있으면 별도
     nullKeys.forEach(({key, role}, i) => {
       const ki = detailKeys.findIndex(k => k.key === key);
       html += `<div style="margin-top:8px;">${pwBox(ki, null)}</div>`;
     });
   } else {
-    detailKeys.forEach(({key, role}, ki) => {
-      html += pwBox(ki, role);
-    });
+    detailKeys.forEach(({key, role}, ki) => { html += pwBox(ki, role); });
   }
 
   body.innerHTML = html;
 
-  // 수정 토글
   body.querySelectorAll('.pw-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1639,15 +1531,10 @@ function renderPwUI() {
       const isOpen = row.style.display !== 'none';
       row.style.display = isOpen ? 'none' : 'flex';
       btn.textContent = isOpen ? '수정' : '취소';
-      if (!isOpen) {
-        const inp = document.getElementById(`pwInput-${ki}`);
-        inp.value = '';
-        inp.focus();
-      }
+      if (!isOpen) { document.getElementById(`pwInput-${ki}`).focus(); }
     });
   });
 
-  // 현재 비밀번호 삭제
   body.querySelectorAll('.pw-del-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1659,7 +1546,6 @@ function renderPwUI() {
     });
   });
 
-  // 저장
   body.querySelectorAll('.pw-save-btn-dyn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1680,7 +1566,6 @@ function renderPwUI() {
     });
   });
 
-  // 히스토리 삭제
   body.querySelectorAll('.pw-hist-del').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1692,7 +1577,6 @@ function renderPwUI() {
     });
   });
 
-  // Enter키 저장
   body.querySelectorAll('.pw-input').forEach(inp => {
     inp.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
@@ -1711,7 +1595,6 @@ function renderMemoUI() {
   const hasIn  = detailKeys.some(k => k.role === 'in');
   const showSplit = hasOut && hasIn;
 
-  // 메모 섹션 HTML 생성 (단일)
   function memoSection(ki) {
     const {key, role, platform} = detailKeys[ki];
     const extra = getExtra(key);
@@ -1724,7 +1607,6 @@ function renderMemoUI() {
     if (detailKeys.length > 1 && (role === 'out' || role === 'in')) {
       html += `<div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:8px;">${labelText}${platform==='booking'?' 🏨':platform==='trip'?' 🌐':platform==='lv'?' 🏡':''}</div>`;
     }
-    // 기존 메모 목록
     if (memos.length) {
       html += memos.map((memo, i) => `
         <div class="memo-item" id="memo-item-${ki}-${i}" style="border-color:${borderColor};">
@@ -1739,7 +1621,6 @@ function renderMemoUI() {
         </div>
       `).join('');
     }
-    // 입력 영역
     html += `<div class="memo-input-row" style="margin-top:${memos.length?'6px':'0'};gap:6px;">
       <textarea class="memo-textarea" id="memoInput-${ki}" placeholder="메모..." style="min-height:48px;font-size:12px;padding:8px 10px;"></textarea>
       <button class="memo-add-btn" data-ki="${ki}" style="padding:8px 10px;font-size:12px;">추가</button>
@@ -1750,7 +1631,6 @@ function renderMemoUI() {
 
   let html = '';
   if (showSplit) {
-    // 아웃/인 좌우 나란히
     html += `<div style="display:flex;gap:10px;align-items:flex-start;">`;
     detailKeys.forEach(({role}, ki) => {
       if (role === 'out' || role === 'in') html += memoSection(ki);
@@ -1761,7 +1641,6 @@ function renderMemoUI() {
   }
   list.innerHTML = html;
 
-  // 삭제 버튼 이벤트
   list.querySelectorAll('.memo-del').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1774,7 +1653,6 @@ function renderMemoUI() {
     });
   });
 
-  // 수정 버튼 이벤트
   list.querySelectorAll('.memo-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1809,7 +1687,6 @@ function renderMemoUI() {
     });
   });
 
-  // 메모 추가 버튼 이벤트
   list.querySelectorAll('.memo-add-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ki = +btn.dataset.ki;
@@ -1825,7 +1702,6 @@ function renderMemoUI() {
     });
   });
 
-  // Enter+Ctrl or Shift+Enter로 메모 추가
   list.querySelectorAll('.memo-textarea').forEach(ta => {
     ta.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -1836,14 +1712,11 @@ function renderMemoUI() {
   });
 }
 
-// 메모 추가 (각 예약별 섹션 안의 버튼으로 처리됨)
-
 document.getElementById('closeDetail').onclick = () => document.getElementById('detailPanel').classList.remove('open');
 document.getElementById('detailPanel').addEventListener('click', e => {
   if (e.target === document.getElementById('detailPanel')) document.getElementById('detailPanel').classList.remove('open');
 });
 
-// Events
 document.getElementById('prevBtn').onclick = () => { curM--; if(curM<0){curM=11;curY--;} render(); };
 document.getElementById('nextBtn').onclick = () => { curM++; if(curM>11){curM=0;curY++;} render(); };
 document.getElementById('todayBtn').onclick = () => { const t=today(); curY=t.y; curM=t.m; render(); };
@@ -1876,7 +1749,6 @@ document.getElementById('addRoomBtn').onclick = () => {
 
 document.getElementById('syncBtn').onclick = () => syncAll();
 
-// Init
 async function init() {
   const t = today(); curY=t.y; curM=t.m;
   await loadRooms();
