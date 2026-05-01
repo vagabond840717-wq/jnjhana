@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HANA STAY — 요금 계산기</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #F7F6F2;
@@ -15,19 +15,15 @@
   --text: #1A1A18;
   --text2: #6B6A65;
   --text3: #9E9D97;
-  --airbnb: #E8441A;
-  --airbnb-bg: #FEF0EC;
-  --booking: #1A5EAD;
-  --booking-bg: #EBF2FB;
-  --green: #1D7A55;
-  --green-bg: #E8F5EE;
+  --ab: #E8441A; --ab-bg: #FEF0EC;
+  --bk: #1A5EAD; --bk-bg: #EBF2FB;
+  --tr: #0F7AC5; --tr-bg: #E6F4FC;
+  --lv: #7C3AED; --lv-bg: #F3EEFF;
+  --green: #1D7A55; --green-bg: #E8F5EE;
   --red: #C0392B;
-  --weekday: #6B4FCF;
-  --weekday-bg: #F0ECFF;
-  --weekend: #B45309;
-  --weekend-bg: #FEF3C7;
-  --radius: 14px;
-  --radius-sm: 8px;
+  --wd: #6B4FCF; --wd-bg: #F0ECFF;
+  --we: #B45309; --we-bg: #FEF3C7;
+  --radius: 14px; --radius-sm: 8px;
   --shadow: 0 1px 4px rgba(0,0,0,0.07);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,207 +34,206 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 100;
 }
-.header-brand { font-family: 'DM Mono', monospace; font-size: 14px; color: #fff; letter-spacing: 0.08em; font-weight: 500; }
+.header-brand { font-family: 'DM Mono', monospace; font-size: 14px; color: #fff; letter-spacing: 0.08em; }
 .header-sub   { font-size: 11px; color: rgba(255,255,255,0.4); font-family: 'DM Mono', monospace; }
 
-.main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
+.main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
 
 .sec-title {
-  font-size: 11px; font-weight: 600; color: var(--text3);
-  letter-spacing: 0.07em; text-transform: uppercase;
-  margin: 20px 0 8px;
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  letter-spacing: 0.1em; text-transform: uppercase; margin: 24px 0 8px;
 }
 .sec-title:first-child { margin-top: 0; }
 
 .panel {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow);
-  overflow: hidden; margin-bottom: 14px;
+  border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden;
 }
 .panel-head {
-  padding: 12px 16px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; background: var(--surface2);
 }
-.pbadge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.03em; }
-.pbadge.ab { background: var(--airbnb-bg); color: var(--airbnb); }
-.pbadge.bk { background: var(--booking-bg); color: var(--booking); }
-.panel-title { font-size: 13px; font-weight: 500; }
-.panel-body { padding: 14px 16px; }
-
-.rate-row {
-  display: grid; grid-template-columns: auto 1fr 1fr; gap: 10px;
-  align-items: center; margin-bottom: 10px;
+.pbadge {
+  font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; letter-spacing: 0.03em; white-space: nowrap;
 }
-.wlabel {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; padding: 5px 12px;
-  border-radius: 20px; white-space: nowrap;
-}
-.wlabel.wd { background: var(--weekday-bg); color: var(--weekday); }
-.wlabel.we { background: var(--weekend-bg); color: var(--weekend); }
-.wlabel .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pbadge.ab { background: var(--ab-bg); color: var(--ab); }
+.pbadge.bk { background: var(--bk-bg); color: var(--bk); }
+.pbadge.tr { background: var(--tr-bg); color: var(--tr); }
+.pbadge.lv { background: var(--lv-bg); color: var(--lv); }
+.panel-sub { font-size: 11px; color: var(--text3); }
+.panel-body { padding: 12px 14px; }
 
-.common-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
-
-@media (max-width: 500px) {
-  .common-row { grid-template-columns: 1fr 1fr; }
-}
-
-.field { display: flex; flex-direction: column; gap: 4px; }
-.field label { font-size: 11px; color: var(--text2); font-weight: 500; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 10px; color: var(--text2); font-weight: 600; letter-spacing: 0.02em; }
 .field input {
   font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500;
-  padding: 8px 10px; border: 1px solid var(--border-strong);
+  padding: 7px 9px; border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
-  width: 100%; transition: border-color 0.15s, background 0.15s; -webkit-appearance: none;
+  width: 100%; -webkit-appearance: none; transition: border-color 0.15s;
 }
-.field input:focus { outline: none; border-color: var(--booking); background: #F5F8FF; }
-.field .hint { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.field input:focus { outline: none; border-color: var(--bk); background: #F5F8FF; }
+.field .hint { font-size: 10px; color: var(--text3); }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 520px) {
+  .row3 { grid-template-columns: 1fr 1fr; }
+  .row4 { grid-template-columns: 1fr 1fr; }
+}
+
 .divider { height: 1px; background: var(--border); margin: 12px 0; }
 
-/* 청소비 공통 패널 */
-.clean-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-.promo-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-.ptag {
-  font-size: 11px; padding: 5px 12px; border-radius: 20px;
-  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text2);
-  cursor: pointer; font-weight: 500; transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent; user-select: none;
+.ab-price-row {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: end; margin-bottom: 8px;
 }
-.ptag:active { transform: scale(0.96); }
-.ptag.on { background: var(--green-bg); color: var(--green); border-color: rgba(29,122,85,0.3); }
+.ab-price-row:last-child { margin-bottom: 0; }
+.wlabel {
+  font-size: 11px; font-weight: 700; padding: 7px 12px; border-radius: 20px;
+  white-space: nowrap; display: flex; align-items: center; gap: 5px;
+}
+.wlabel .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.wlabel.wd { background: var(--wd-bg); color: var(--wd); }
+.wlabel.we { background: var(--we-bg); color: var(--we); }
 
-/* ── 결과 테이블 ── */
-.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-@media (max-width: 600px) { .result-grid { grid-template-columns: 1fr; } }
-
-.result-panel {
+/* 결과 */
+.result-wrap { display: flex; flex-direction: column; gap: 10px; }
+.result-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
 }
-.result-panel-head {
+.result-card-head {
   padding: 10px 14px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
   background: var(--surface2);
 }
-.result-panel-head .ptitle { font-size: 12px; font-weight: 600; }
-.result-panel-head .ptitle.ab { color: var(--airbnb); }
-.result-panel-head .ptitle.bk { color: var(--booking); }
-.result-panel-head .prate { font-size: 11px; color: var(--text3); }
+.rcard-title { font-size: 12px; font-weight: 700; }
+.rcard-title.ab { color: var(--ab); }
+.rcard-title.bk { color: var(--bk); }
+.rcard-title.tr { color: var(--tr); }
+.rcard-title.lv { color: var(--lv); }
+.rcard-meta { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
 
 .rtable { width: 100%; border-collapse: collapse; }
-.rtable tr { border-bottom: 1px solid var(--border); }
-.rtable tr:last-child { border-bottom: none; }
 .rtable th {
-  padding: 8px 10px; font-size: 10px; font-weight: 600;
-  color: var(--text3); letter-spacing: 0.04em; text-transform: uppercase;
-  text-align: right; border-bottom: 1px solid var(--border-strong);
-  background: #FAFAF8; white-space: nowrap;
+  padding: 7px 10px; font-size: 10px; font-weight: 700; color: var(--text3);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  text-align: right; border-bottom: 1px solid var(--border); background: #FAFAF8;
 }
 .rtable th:first-child { text-align: left; }
-.rtable td { padding: 9px 10px; font-size: 13px; color: var(--text2); vertical-align: middle; }
-.rtable td:not(:first-child) {
-  text-align: right; font-family: 'DM Mono', monospace; font-weight: 500; color: var(--text);
+.rtable td {
+  padding: 9px 10px; font-size: 13px; color: var(--text2);
+  border-bottom: 1px solid var(--border); vertical-align: middle;
 }
+.rtable tr:last-child td { border-bottom: none; }
+.rtable td:not(:first-child) { text-align: right; font-family: 'DM Mono', monospace; font-weight: 500; }
 .rtable tr.we-row { background: #FFFDF7; }
 
-.tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; margin-right: 3px; }
-.tag.wd { background: var(--weekday-bg); color: var(--weekday); }
-.tag.we { background: var(--weekend-bg); color: var(--weekend); }
+.tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-right: 3px; }
+.tag.wd { background: var(--wd-bg); color: var(--wd); }
+.tag.we { background: var(--we-bg); color: var(--we); }
 
-/* 직접/외주 구분 색상 */
-.self-net  { color: var(--green) !important; }
-.out-net   { color: var(--booking) !important; }
-.fee-cell  { color: var(--red) !important; font-size: 12px !important; }
+.col-net  { color: var(--green) !important; font-weight: 700 !important; }
+.col-rev  { color: var(--bk) !important; font-weight: 700 !important; }
+.col-fee  { color: var(--red) !important; font-size: 12px !important; }
+.th-net   { color: var(--green) !important; }
+.th-rev   { color: var(--bk) !important; }
 
-/* 컬럼 헤더 색 */
-.th-self { color: var(--green) !important; }
-.th-out  { color: var(--booking) !important; }
-
-/* ── 비교 ── */
-.diff-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  margin-bottom: 8px; box-shadow: var(--shadow);
+.footnote {
+  font-size: 11px; color: var(--text3); text-align: center;
+  padding: 20px 16px 0; line-height: 2;
 }
-.diff-row:last-child { margin-bottom: 0; }
-.diff-label { font-size: 13px; color: var(--text2); }
-.diff-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.diff-val   { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; }
-.diff-msg   { font-size: 11px; font-weight: 600; margin-top: 2px; }
-
-.footnote { font-size: 11px; color: var(--text3); text-align: center; padding: 0 16px 24px; line-height: 1.8; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <span class="header-brand">HANA STAY</span>
-  <span class="header-sub">요금 계산기 v5</span>
+  <span class="header-sub">요금 계산기 v6</span>
 </div>
 
 <div class="main">
 
-  <!-- ── 요금 설정 ── -->
-  <div class="sec-title">요금 설정</div>
+  <!-- ── 에어비앤비 ── -->
+  <div class="sec-title">Airbnb 기준 설정</div>
   <div class="panel">
+    <div class="panel-head">
+      <span class="pbadge ab">Airbnb</span>
+      <span class="panel-sub">요금 입력 → 순수익 계산 기준</span>
+    </div>
     <div class="panel-body">
-
-      <!-- Airbnb -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span class="pbadge ab">Airbnb</span>
-        <div class="field" style="flex:1;max-width:160px">
+      <div class="row2" style="margin-bottom:12px">
+        <div class="field">
           <label>수수료율 (%)</label>
           <input type="number" id="ab_fee" value="15.5" step="0.5" inputmode="decimal" oninput="calc()">
           <span class="hint">2025.10~ 기본 15.5%</span>
         </div>
+        <div class="field">
+          <label>프로모션 할인 (%)</label>
+          <input type="number" id="ab_promo" value="0" step="1" min="0" max="50" inputmode="decimal" oninput="calc()">
+          <span class="hint">장기할인 등 적용 시</span>
+        </div>
       </div>
-      <div class="rate-row">
+      <div class="ab-price-row">
         <div class="wlabel wd"><span class="dot"></span>주중</div>
-        <div class="field"><label>1박 요금</label><input type="number" id="ab_wd_p" value="280000" step="1000" inputmode="numeric" oninput="calc()"></div>
-        <div style="display:none"></div>
+        <div class="field"><label>1박 요금 (원)</label><input type="number" id="ab_wd_p" value="280000" step="1000" inputmode="numeric" oninput="calc()"></div>
       </div>
-      <div class="rate-row">
+      <div class="ab-price-row">
         <div class="wlabel we"><span class="dot"></span>주말</div>
-        <div class="field"><label>1박 요금</label><input type="number" id="ab_we_p" value="330000" step="1000" inputmode="numeric" oninput="calc()"></div>
-        <div style="display:none"></div>
+        <div class="field"><label>1박 요금 (원)</label><input type="number" id="ab_we_p" value="330000" step="1000" inputmode="numeric" oninput="calc()"></div>
       </div>
+    </div>
+  </div>
 
-      <div class="divider"></div>
+  <!-- ── 다른 플랫폼 ── -->
+  <div class="sec-title">다른 플랫폼 — 역산 설정</div>
 
-      <!-- Booking -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span class="pbadge bk">Booking</span>
-        <div class="field" style="flex:1;max-width:160px">
+  <div class="panel">
+    <div class="panel-head"><span class="pbadge bk">Booking.com</span><span class="panel-sub">동일 순수익 달성 등록가 역산</span></div>
+    <div class="panel-body">
+      <div class="row2">
+        <div class="field">
           <label>커미션율 (%)</label>
           <input type="number" id="bk_comm" value="17.5" step="0.5" inputmode="decimal" oninput="calc()">
         </div>
+        <div class="field">
+          <label>프로모션 할인 (%)</label>
+          <input type="number" id="bk_promo" value="10" step="1" min="0" max="60" inputmode="decimal" oninput="calc()">
+          <span class="hint">Genius·모바일 등 합산</span>
+        </div>
       </div>
-      <div class="rate-row">
-        <div class="wlabel wd"><span class="dot"></span>주중</div>
-        <div class="field"><label>1박 요금</label><input type="number" id="bk_wd_p" value="280000" step="1000" inputmode="numeric" oninput="calc()"></div>
-        <div style="display:none"></div>
-      </div>
-      <div class="rate-row">
-        <div class="wlabel we"><span class="dot"></span>주말</div>
-        <div class="field"><label>1박 요금</label><input type="number" id="bk_we_p" value="330000" step="1000" inputmode="numeric" oninput="calc()"></div>
-        <div style="display:none"></div>
-      </div>
+    </div>
+  </div>
 
-      <div class="divider"></div>
-
-      <!-- 프로모션 -->
-      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px">Booking 프로모션 (클릭 ON/OFF · 중첩 가능)</div>
-      <div class="promo-wrap">
-        <div class="ptag" data-v="10" onclick="tog(this)">환불불가 −10%</div>
-        <div class="ptag" data-v="10" onclick="tog(this)">모바일 −10%</div>
-        <div class="ptag on" data-v="10" onclick="tog(this)">Genius 1 −10%</div>
-        <div class="ptag" data-v="15" onclick="tog(this)">Genius 2 −15%</div>
-        <div class="ptag" data-v="20" onclick="tog(this)">Genius 3 −20%</div>
+  <div class="panel">
+    <div class="panel-head"><span class="pbadge tr">Trip.com</span><span class="panel-sub">동일 순수익 달성 등록가 역산</span></div>
+    <div class="panel-body">
+      <div class="row2">
+        <div class="field">
+          <label>커미션율 (%)</label>
+          <input type="number" id="tr_comm" value="15" step="0.5" inputmode="decimal" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>프로모션 할인 (%)</label>
+          <input type="number" id="tr_promo" value="0" step="1" min="0" max="60" inputmode="decimal" oninput="calc()">
+        </div>
       </div>
+    </div>
+  </div>
 
+  <div class="panel">
+    <div class="panel-head"><span class="pbadge lv">리브애니웨어</span><span class="panel-sub">동일 순수익 달성 등록가 역산</span></div>
+    <div class="panel-body">
+      <div class="row2">
+        <div class="field">
+          <label>수수료율 (%)</label>
+          <input type="number" id="lv_comm" value="10" step="0.5" inputmode="decimal" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>프로모션 할인 (%)</label>
+          <input type="number" id="lv_promo" value="0" step="1" min="0" max="60" inputmode="decimal" oninput="calc()">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -246,113 +241,54 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
   <div class="sec-title">공통 설정</div>
   <div class="panel">
     <div class="panel-body">
-      <div class="clean-grid">
+      <div class="row4">
         <div class="field">
-          <label>청소 외주비 (남 맡길 때)</label>
+          <label>청소 외주비</label>
           <input type="number" id="clean_out" value="50000" step="1000" inputmode="numeric" oninput="calc()">
         </div>
         <div class="field">
-          <label>청소 재료비 (직접 할 때)</label>
+          <label>청소 재료비</label>
           <input type="number" id="clean_self" value="10000" step="1000" inputmode="numeric" oninput="calc()">
-          <span class="hint">세제·소모품 등 실비</span>
+          <span class="hint">직접 청소 시 실비</span>
         </div>
-      </div>
-      <div class="divider"></div>
-      <div class="common-row">
-        <div class="field"><label>1인 추가요금</label><input type="number" id="extra" value="18000" step="1000" inputmode="numeric" oninput="calc()"></div>
-        <div class="field"><label>기준 인원</label><input type="number" id="base_g" value="2" min="1" max="10" inputmode="numeric" oninput="calc()"></div>
-        <div class="field"><label>최대 인원</label><input type="number" id="max_g" value="4" min="1" max="10" inputmode="numeric" oninput="calc()"></div>
+        <div class="field">
+          <label>1인 추가요금</label>
+          <input type="number" id="extra" value="18000" step="1000" inputmode="numeric" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>기준인원 / 최대인원</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="base_g" value="2" min="1" max="10" inputmode="numeric" oninput="calc()" style="width:50%">
+            <input type="number" id="max_g"  value="4" min="1" max="10" inputmode="numeric" oninput="calc()" style="width:50%">
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ── 결과 ── -->
-  <div class="sec-title">순수익 결과</div>
-  <div class="result-grid">
-    <div class="result-panel">
-      <div class="result-panel-head">
-        <span class="ptitle ab">Airbnb</span>
-        <span class="prate" id="ab_rate_disp"></span>
-      </div>
-      <table class="rtable">
-        <thead>
-          <tr>
-            <th>구분</th>
-            <th>등록가</th>
-            <th>차감</th>
-            <th class="th-self">직접 청소</th>
-            <th class="th-out">외주 청소</th>
-          </tr>
-        </thead>
-        <tbody id="ab_body"></tbody>
-      </table>
-    </div>
-    <div class="result-panel">
-      <div class="result-panel-head">
-        <span class="ptitle bk">Booking.com</span>
-        <span class="prate" id="bk_rate_disp"></span>
-      </div>
-      <table class="rtable">
-        <thead>
-          <tr>
-            <th>구분</th>
-            <th>등록가</th>
-            <th>차감</th>
-            <th class="th-self">직접 청소</th>
-            <th class="th-out">외주 청소</th>
-          </tr>
-        </thead>
-        <tbody id="bk_body"></tbody>
-      </table>
-    </div>
-  </div>
+  <div class="sec-title">결과</div>
+  <div class="result-wrap" id="result_wrap"></div>
 
-  <!-- ── 비교 ── -->
-  <div class="sec-title">플랫폼 비교 (기준인원 기준)</div>
-  <div id="diff_wrap"></div>
+  <p class="footnote" id="footnote_area"></p>
 
 </div>
 
-<p class="footnote">
-  직접 청소 = 재료비만 차감 · 외주 청소 = 외주비 전액 차감<br>
-  수수료는 등록가 + 청소 외주비 기준으로 계산됩니다<br>
-  실제 정산액과 다를 수 있습니다
-</p>
-
 <script>
-function tog(el) { el.classList.toggle('on'); calc(); }
-function promoTotal() {
-  let d = 0;
-  document.querySelectorAll('.ptag.on').forEach(e => d += +e.dataset.v);
-  return Math.min(d, 60);
-}
 function won(n) { return '₩' + Math.round(n).toLocaleString('ko-KR'); }
 
-// 계산 로직
-// - 수수료 기준: 등록가 + 외주청소비 (플랫폼이 청소비 포함 전체에서 뗌)
-// - 직접 청소 순수익: 등록가 + 추가인원 - 수수료 - 재료비
-// - 외주 청소 순수익: 등록가 + 추가인원 - 수수료 - 외주비
-
-function calcAB(price, extra, guests, baseG, fee, cleanSelf, cleanOut) {
-  const extraAmt = (guests - baseG) * extra;
-  const listed   = price + extraAmt;                        // 등록가 + 추가인원
-  const feeBase  = listed + cleanOut;                       // 수수료 계산 기준 (청소외주비 포함)
-  const feeAmt   = feeBase * fee / 100;
-  return {
-    listed,
-    feeAmt,
-    netSelf: listed - feeAmt - cleanSelf,   // 직접 청소
-    netOut:  listed - feeAmt - cleanOut,    // 외주 청소
-  };
+// 실효 차감률: 프로모 먼저 적용 후 수수료
+// 손실 = promo% (할인 손실) + (1 - promo%) * comm% (수수료)
+function effectiveRate(comm, promo) {
+  return promo / 100 + (1 - promo / 100) * comm / 100;
 }
 
-function calcBK(price, extra, guests, baseG, comm, promo, cleanSelf, cleanOut) {
-  const extraAmt   = (guests - baseG) * extra;
-  const listed     = price + extraAmt;
-  const feeBase    = listed + cleanOut;
-  const afterPromo = feeBase * (1 - promo / 100);
-  const commAmt    = afterPromo * comm / 100;
-  const deduct     = (feeBase - afterPromo) + commAmt;     // 프로모 손실 + 커미션
+// 순수익 계산
+function calcNet(price, extra, guests, baseG, comm, promo, cleanSelf, cleanOut) {
+  const extraAmt = (guests - baseG) * extra;
+  const listed   = price + extraAmt;
+  const rate     = effectiveRate(comm, promo);
+  const deduct   = listed * rate;
   return {
     listed,
     deduct,
@@ -361,101 +297,126 @@ function calcBK(price, extra, guests, baseG, comm, promo, cleanSelf, cleanOut) {
   };
 }
 
+// 역산: 타 플랫폼에서 동일 순수익을 내려면 얼마로 등록해야 하나
+// netTarget = listed * (1 - rate) - clean  →  listed = (netTarget + clean) / (1 - rate)
+function reverseCalc(targetNetSelf, targetNetOut, comm, promo, cleanSelf, cleanOut) {
+  const rate = effectiveRate(comm, promo);
+  const keep = 1 - rate;
+  if (keep <= 0) return null;
+  return {
+    listedSelf: (targetNetSelf + cleanSelf) / keep,
+    listedOut:  (targetNetOut  + cleanOut)  / keep,
+  };
+}
+
+function makeAbRow(isWe, guests, listed, deduct, netSelf, netOut) {
+  const cls    = isWe ? ' class="we-row"' : '';
+  const dayTag = `<span class="tag ${isWe?'we':'wd'}">${isWe?'주말':'주중'}</span>`;
+  return `<tr${cls}>
+    <td>${dayTag}${guests}인</td>
+    <td>${won(listed)}</td>
+    <td class="col-fee">−${won(deduct)}</td>
+    <td class="col-net">${won(netSelf)}</td>
+    <td class="col-net">${won(netOut)}</td>
+  </tr>`;
+}
+
+function makeRevRow(isWe, guests, listedSelf, listedOut) {
+  const cls    = isWe ? ' class="we-row"' : '';
+  const dayTag = `<span class="tag ${isWe?'we':'wd'}">${isWe?'주말':'주중'}</span>`;
+  return `<tr${cls}>
+    <td>${dayTag}${guests}인</td>
+    <td class="col-rev">${won(listedSelf)}</td>
+    <td class="col-rev">${won(listedOut)}</td>
+  </tr>`;
+}
+
+function abHeader() {
+  return `<thead><tr>
+    <th>구분</th><th>등록가</th><th>차감</th>
+    <th class="th-net">직접청소 순수익</th>
+    <th class="th-net">외주청소 순수익</th>
+  </tr></thead>`;
+}
+function revHeader() {
+  return `<thead><tr>
+    <th>구분</th>
+    <th class="th-rev">직접청소 기준 등록가</th>
+    <th class="th-rev">외주청소 기준 등록가</th>
+  </tr></thead>`;
+}
+
+function card(cls, name, meta, tableHtml) {
+  return `<div class="result-card">
+    <div class="result-card-head">
+      <span class="rcard-title ${cls}">${name}</span>
+      <span class="rcard-meta">${meta}</span>
+    </div>
+    <table class="rtable">${tableHtml}</table>
+  </div>`;
+}
+
 function calc() {
-  const abWdP   = +document.getElementById('ab_wd_p').value  || 0;
-  const abWeP   = +document.getElementById('ab_we_p').value  || 0;
-  const abFee   = +document.getElementById('ab_fee').value   || 15.5;
-  const bkWdP   = +document.getElementById('bk_wd_p').value  || 0;
-  const bkWeP   = +document.getElementById('bk_we_p').value  || 0;
-  const bkComm  = +document.getElementById('bk_comm').value  || 17.5;
-  const promo   = promoTotal();
-  const extra   = +document.getElementById('extra').value    || 0;
-  const baseG   = +document.getElementById('base_g').value   || 2;
-  const maxG    = +document.getElementById('max_g').value    || 4;
+  const abWdP   = +document.getElementById('ab_wd_p').value   || 0;
+  const abWeP   = +document.getElementById('ab_we_p').value   || 0;
+  const abFee   = +document.getElementById('ab_fee').value    || 15.5;
+  const abPromo = +document.getElementById('ab_promo').value  || 0;
+  const bkComm  = +document.getElementById('bk_comm').value   || 17.5;
+  const bkPromo = +document.getElementById('bk_promo').value  || 0;
+  const trComm  = +document.getElementById('tr_comm').value   || 15;
+  const trPromo = +document.getElementById('tr_promo').value  || 0;
+  const lvComm  = +document.getElementById('lv_comm').value   || 10;
+  const lvPromo = +document.getElementById('lv_promo').value  || 0;
   const cleanS  = +document.getElementById('clean_self').value || 0;
   const cleanO  = +document.getElementById('clean_out').value  || 0;
+  const extra   = +document.getElementById('extra').value     || 0;
+  const baseG   = +document.getElementById('base_g').value    || 2;
+  const maxG    = +document.getElementById('max_g').value     || 4;
 
-  document.getElementById('ab_rate_disp').textContent = `수수료 ${abFee}%`;
-  document.getElementById('bk_rate_disp').textContent = `커미션 ${bkComm}% · 프로모 ${promo}%`;
+  const abRate = effectiveRate(abFee, abPromo);
+  const bkRate = effectiveRate(bkComm, bkPromo);
+  const trRate = effectiveRate(trComm, trPromo);
+  const lvRate = effectiveRate(lvComm, lvPromo);
 
-  let abRows = '', bkRows = '';
-  let ab_wd_ref, ab_we_ref, bk_wd_ref, bk_we_ref;
+  let abRows='', bkRows='', trRows='', lvRows='';
 
   for (let g = baseG; g <= maxG; g++) {
-    const ab_wd = calcAB(abWdP, extra, g, baseG, abFee, cleanS, cleanO);
-    const ab_we = calcAB(abWeP, extra, g, baseG, abFee, cleanS, cleanO);
-    const bk_wd = calcBK(bkWdP, extra, g, baseG, bkComm, promo, cleanS, cleanO);
-    const bk_we = calcBK(bkWeP, extra, g, baseG, bkComm, promo, cleanS, cleanO);
+    const ab_wd = calcNet(abWdP, extra, g, baseG, abFee, abPromo, cleanS, cleanO);
+    const ab_we = calcNet(abWeP, extra, g, baseG, abFee, abPromo, cleanS, cleanO);
 
-    if (g === baseG) { ab_wd_ref = ab_wd; ab_we_ref = ab_we; bk_wd_ref = bk_wd; bk_we_ref = bk_we; }
+    abRows += makeAbRow(false, g, ab_wd.listed, ab_wd.deduct, ab_wd.netSelf, ab_wd.netOut);
+    abRows += makeAbRow(true,  g, ab_we.listed, ab_we.deduct, ab_we.netSelf, ab_we.netOut);
 
-    abRows += `
-      <tr>
-        <td><span class="tag wd">주중</span>${g}인</td>
-        <td>${won(ab_wd.listed)}</td>
-        <td class="fee-cell">−${won(ab_wd.feeAmt)}</td>
-        <td class="self-net">${won(ab_wd.netSelf)}</td>
-        <td class="out-net">${won(ab_wd.netOut)}</td>
-      </tr>
-      <tr class="we-row">
-        <td><span class="tag we">주말</span>${g}인</td>
-        <td>${won(ab_we.listed)}</td>
-        <td class="fee-cell">−${won(ab_we.feeAmt)}</td>
-        <td class="self-net">${won(ab_we.netSelf)}</td>
-        <td class="out-net">${won(ab_we.netOut)}</td>
-      </tr>`;
+    const bk_wd = reverseCalc(ab_wd.netSelf, ab_wd.netOut, bkComm, bkPromo, cleanS, cleanO);
+    const bk_we = reverseCalc(ab_we.netSelf, ab_we.netOut, bkComm, bkPromo, cleanS, cleanO);
+    const tr_wd = reverseCalc(ab_wd.netSelf, ab_wd.netOut, trComm, trPromo, cleanS, cleanO);
+    const tr_we = reverseCalc(ab_we.netSelf, ab_we.netOut, trComm, trPromo, cleanS, cleanO);
+    const lv_wd = reverseCalc(ab_wd.netSelf, ab_wd.netOut, lvComm, lvPromo, cleanS, cleanO);
+    const lv_we = reverseCalc(ab_we.netSelf, ab_we.netOut, lvComm, lvPromo, cleanS, cleanO);
 
-    bkRows += `
-      <tr>
-        <td><span class="tag wd">주중</span>${g}인</td>
-        <td>${won(bk_wd.listed)}</td>
-        <td class="fee-cell">−${won(bk_wd.deduct)}</td>
-        <td class="self-net">${won(bk_wd.netSelf)}</td>
-        <td class="out-net">${won(bk_wd.netOut)}</td>
-      </tr>
-      <tr class="we-row">
-        <td><span class="tag we">주말</span>${g}인</td>
-        <td>${won(bk_we.listed)}</td>
-        <td class="fee-cell">−${won(bk_we.deduct)}</td>
-        <td class="self-net">${won(bk_we.netSelf)}</td>
-        <td class="out-net">${won(bk_we.netOut)}</td>
-      </tr>`;
+    if (bk_wd) { bkRows += makeRevRow(false, g, bk_wd.listedSelf, bk_wd.listedOut); }
+    if (bk_we) { bkRows += makeRevRow(true,  g, bk_we.listedSelf, bk_we.listedOut); }
+    if (tr_wd) { trRows += makeRevRow(false, g, tr_wd.listedSelf, tr_wd.listedOut); }
+    if (tr_we) { trRows += makeRevRow(true,  g, tr_we.listedSelf, tr_we.listedOut); }
+    if (lv_wd) { lvRows += makeRevRow(false, g, lv_wd.listedSelf, lv_wd.listedOut); }
+    if (lv_we) { lvRows += makeRevRow(true,  g, lv_we.listedSelf, lv_we.listedOut); }
   }
 
-  document.getElementById('ab_body').innerHTML = abRows;
-  document.getElementById('bk_body').innerHTML = bkRows;
+  const abMeta = `수수료 ${abFee}%${abPromo>0?' · 프로모 '+abPromo+'%':''} → 실효 ${(abRate*100).toFixed(1)}%`;
+  const bkMeta = `커미션 ${bkComm}% · 프로모 ${bkPromo}% → 실효 ${(bkRate*100).toFixed(1)}%`;
+  const trMeta = `커미션 ${trComm}% · 프로모 ${trPromo}% → 실효 ${(trRate*100).toFixed(1)}%`;
+  const lvMeta = `수수료 ${lvComm}% · 프로모 ${lvPromo}% → 실효 ${(lvRate*100).toFixed(1)}%`;
 
-  // 비교
-  function diffRow(label, abSelf, abOut, bkSelf, bkOut) {
-    const dSelf = bkSelf - abSelf;
-    const dOut  = bkOut  - abOut;
-    const cS = dSelf >= 0 ? 'var(--green)' : 'var(--red)';
-    const cO = dOut  >= 0 ? 'var(--green)' : 'var(--red)';
-    const mS = dSelf >= 0 ? 'Booking 유리' : 'Airbnb 유리';
-    const mO = dOut  >= 0 ? 'Booking 유리' : 'Airbnb 유리';
-    return `
-      <div class="diff-row">
-        <div>
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${label}</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:2px">
-            🧹 직접 청소 &nbsp;·&nbsp; AB <span style="font-family:'DM Mono',monospace">${won(abSelf)}</span> vs BK <span style="font-family:'DM Mono',monospace">${won(bkSelf)}</span>
-          </div>
-          <div style="font-size:12px;color:var(--text2)">
-            🏠 외주 청소 &nbsp;·&nbsp; AB <span style="font-family:'DM Mono',monospace">${won(abOut)}</span> vs BK <span style="font-family:'DM Mono',monospace">${won(bkOut)}</span>
-          </div>
-        </div>
-        <div style="text-align:right;min-width:110px">
-          <div class="diff-val" style="color:${cS}">${(dSelf>=0?'+':'') + won(dSelf)}</div>
-          <div class="diff-msg" style="color:${cS}">직접 · ${mS}</div>
-          <div style="margin-top:6px" class="diff-val" style="color:${cO}">${(dOut>=0?'+':'') + won(dOut)}</div>
-          <div class="diff-msg" style="color:${cO}">외주 · ${mO}</div>
-        </div>
-      </div>`;
-  }
+  document.getElementById('result_wrap').innerHTML =
+    card('ab', 'Airbnb 순수익',            abMeta, abHeader() + '<tbody>' + abRows + '</tbody>') +
+    card('bk', 'Booking.com — 역산 등록가', bkMeta, revHeader() + '<tbody>' + bkRows + '</tbody>') +
+    card('tr', 'Trip.com — 역산 등록가',    trMeta, revHeader() + '<tbody>' + trRows + '</tbody>') +
+    card('lv', '리브애니웨어 — 역산 등록가', lvMeta, revHeader() + '<tbody>' + lvRows + '</tbody>');
 
-  document.getElementById('diff_wrap').innerHTML =
-    diffRow('주중 비교 (기준인원)', ab_wd_ref.netSelf, ab_wd_ref.netOut, bk_wd_ref.netSelf, bk_wd_ref.netOut) +
-    diffRow('주말 비교 (기준인원)', ab_we_ref.netSelf, ab_we_ref.netOut, bk_we_ref.netSelf, bk_we_ref.netOut);
+  document.getElementById('footnote_area').innerHTML =
+    `직접청소 기준 등록가 = Airbnb 직접청소 순수익과 동일하게 맞추려면<br>
+     외주청소 기준 등록가 = Airbnb 외주청소 순수익과 동일하게 맞추려면<br>
+     실효율 = 프로모 손실 + (1−프로모) × 수수료`;
 }
 
 calc();
