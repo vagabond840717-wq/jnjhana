@@ -3,1764 +3,393 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f0f0f">
-<title>HANA STAY · 청소 스케줄</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>HANA STAY — 요금 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f0f0f;
-  --surface: #1a1a1a;
-  --surface2: #222222;
-  --border: rgba(255,255,255,0.08);
-  --border2: rgba(255,255,255,0.14);
-  --text: #f0f0f0;
-  --text2: #888;
-  --text3: #555;
-  --accent: #c8f07c;
-  --accent2: #8adfbf;
-  --out: #f0b35b;
-  --in: #6ecf8f;
-  --both-l: #f0b35b;
-  --both-r: #6ecf8f;
-  --occupied: rgba(255,255,255,0.06);
-  --today: #c8f07c;
-  /* Booking.com */
-  --bk-out: #5b9ad8;
-  --bk-in: #7eb8f5;
-  --bk-occupied: rgba(91,154,216,0.10);
-  /* Trip.com */
-  --tr-out: #e07a5f;
-  --tr-in: #f4a261;
-  --tr-occupied: rgba(224,122,95,0.10);
-  /* 리브애니웨어 */
-  --lv-out: #a78bfa;
-  --lv-in: #c4b5fd;
-  --lv-occupied: rgba(167,139,250,0.10);
-  --r: 8px;
-  --r2: 14px;
+  --bg: #F7F6F2; --surface: #FFFFFF; --surface2: #F0EEE8;
+  --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.18);
+  --text: #1A1A18; --text2: #6B6A65; --text3: #9E9D97;
+  --ab: #E8441A; --ab-bg: #FEF0EC;
+  --bk: #1A5EAD; --bk-bg: #EBF2FB;
+  --tr: #0F7AC5; --tr-bg: #E6F4FC;
+  --lv: #7C3AED; --lv-bg: #F3EEFF;
+  --green: #1D7A55; --red: #C0392B;
+  --wd: #6B4FCF; --wd-bg: #F0ECFF;
+  --we: #B45309; --we-bg: #FEF3C7;
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { background: var(--bg); }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-text-size-adjust: 100%; }
+
+.header { background: var(--text); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header-brand { font-family: 'DM Mono', monospace; font-size: 14px; color: #fff; letter-spacing: 0.08em; }
+.header-sub { font-size: 11px; color: rgba(255,255,255,0.4); font-family: 'DM Mono', monospace; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+
+@media (min-width: 800px) {
+  .layout { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+  .col-input { position: sticky; top: 62px; }
 }
 
-/* ── HEADER ── */
-.app-header {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(15,15,15,0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 0.5px solid var(--border);
-  padding: 14px 16px 12px;
-}
-.header-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px;
-}
-.app-title { font-size: 15px; font-weight: 500; letter-spacing: 0.06em; color: var(--text); }
-.app-title span { color: var(--accent); }
-.header-actions { display: flex; gap: 8px; }
-.icon-btn {
-  width: 34px; height: 34px; border-radius: var(--r);
-  border: 0.5px solid var(--border2);
-  background: var(--surface);
-  color: var(--text2); font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.15s;
-}
-.icon-btn:active { transform: scale(0.94); background: var(--surface2); }
-.icon-btn.active { border-color: var(--accent); color: var(--accent); }
+.sec-title { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin: 20px 0 8px; }
+.sec-title:first-child { margin-top: 0; }
 
-.nav-row {
-  display: flex; align-items: center; justify-content: space-between;
-}
-.nav-center { display: flex; align-items: center; gap: 10px; }
-.month-display {
-  font-family: 'DM Mono', monospace;
-  font-size: 15px; font-weight: 500;
-  min-width: 100px; text-align: center;
-  color: var(--text);
-}
-.nav-arrow {
-  width: 30px; height: 30px; border-radius: 50%;
-  border: 0.5px solid var(--border2);
-  background: none; color: var(--text2);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 14px; transition: all 0.15s;
-}
-.nav-arrow:active { background: var(--surface2); transform: scale(0.9); }
-.view-tabs {
-  display: flex; background: var(--surface); border-radius: 20px;
-  padding: 2px; border: 0.5px solid var(--border);
-}
-.view-tab {
-  padding: 4px 12px; border-radius: 18px; font-size: 12px;
-  cursor: pointer; transition: all 0.2s; color: var(--text2);
-  border: none; background: none;
-}
-.view-tab.active { background: var(--accent); color: #0f0f0f; font-weight: 500; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 8px; overflow: hidden; }
+.panel-head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--surface2); }
+.pbadge { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; letter-spacing: 0.03em; white-space: nowrap; }
+.pbadge.ab { background: var(--ab-bg); color: var(--ab); }
+.pbadge.bk { background: var(--bk-bg); color: var(--bk); }
+.pbadge.tr { background: var(--tr-bg); color: var(--tr); }
+.pbadge.lv { background: var(--lv-bg); color: var(--lv); }
+.panel-sub { font-size: 11px; color: var(--text3); }
+.panel-body { padding: 12px 14px; }
 
-/* ── TODAY BANNER ── */
-.today-banner {
-  margin: 12px 16px 0;
-  background: var(--surface);
-  border: 0.5px solid var(--border2);
-  border-radius: var(--r2);
-  padding: 12px 14px;
-  display: flex; align-items: center; justify-content: space-between;
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 10px; color: var(--text2); font-weight: 600; letter-spacing: 0.02em; }
+.field input {
+  font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500;
+  padding: 9px 10px; border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
+  width: 100%; appearance: none; -webkit-appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.today-date { font-size: 13px; color: var(--text2); }
-.today-date strong { color: var(--accent); font-weight: 500; font-family: 'DM Mono', monospace; }
-.today-counts { display: flex; gap: 12px; }
-.today-count { text-align: right; }
-.today-count .num { font-size: 20px; font-weight: 500; font-family: 'DM Mono', monospace; line-height: 1; }
-.today-count .lbl { font-size: 10px; color: var(--text3); margin-top: 1px; }
-.num.out { color: var(--out); }
-.num.inc { color: var(--in); }
+.field input:focus { outline: none; border-color: var(--bk); box-shadow: 0 0 0 3px rgba(26,94,173,0.12); }
+.field .hint { font-size: 10px; color: var(--text3); }
 
-/* ── MAIN CONTENT ── */
-.main { padding: 12px 16px 100px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+@media (max-width: 400px) { .row3 { grid-template-columns: 1fr 1fr; } }
 
-/* ── CALENDAR ── */
-.cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 0 16px; }
-.cal-table { border-collapse: collapse; font-size: 11px; }
-.cal-table th, .cal-table td { padding: 0; }
-.room-th {
-  font-size: 11px; font-weight: 500; color: var(--text2);
-  padding: 0 10px 0 0; white-space: nowrap;
-  min-width: 58px; height: 36px;
-  position: sticky; left: 0;
-  background: var(--bg); z-index: 5;
-}
-.room-th-inner { display: flex; align-items: center; gap: 5px; }
-.room-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.day-th {
-  min-width: 36px; width: 36px;
-  font-size: 10px; color: var(--text3);
-  text-align: center; padding-bottom: 8px;
-  border-bottom: 0.5px solid var(--border);
-  font-family: 'DM Mono', monospace;
-}
-.day-th.sun { color: #e06060; }
-.day-th.sat { color: #5b9ad8; }
-.day-th.today-hd { color: var(--accent); font-weight: 500; }
-.day-th .dname { font-size: 9px; opacity: 0.7; }
-.day-cell { min-width: 36px; width: 36px; height: 36px; padding: 2px; }
-.cell-inner {
-  width: 100%; height: 100%; border-radius: 5px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 1px;
-  font-size: 9px; font-weight: 500; letter-spacing: 0;
-  position: relative;
-  line-height: 1;
-}
-.cell-icon {
-  font-size: 9px; line-height: 1;
-  display: block;
-}
-.cell-txt {
-  font-size: 8px; font-weight: 600; line-height: 1;
-  display: block;
+.ab-price-row { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: end; margin-bottom: 8px; }
+.ab-price-row:last-child { margin-bottom: 0; }
+.wlabel { font-size: 11px; font-weight: 700; padding: 9px 12px; border-radius: 20px; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+.wlabel .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.wlabel.wd { background: var(--wd-bg); color: var(--wd); }
+.wlabel.we { background: var(--we-bg); color: var(--we); }
+
+/* 결과 */
+.result-wrap { display: flex; flex-direction: column; gap: 10px; }
+.result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.result-card-head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; background: var(--surface2); }
+.rcard-title { font-size: 13px; font-weight: 700; }
+.rcard-title.ab { color: var(--ab); }
+.rcard-title.bk { color: var(--bk); }
+.rcard-title.tr { color: var(--tr); }
+.rcard-title.lv { color: var(--lv); }
+.rcard-meta { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+.rtable { width: 100%; border-collapse: collapse; }
+.rtable th { padding: 7px 10px; font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.05em; text-transform: uppercase; text-align: right; border-bottom: 1px solid var(--border); background: #FAFAF8; }
+.rtable th:first-child { text-align: left; }
+.rtable td { padding: 9px 10px; font-size: 13px; color: var(--text2); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.rtable tr:last-child td { border-bottom: none; }
+.rtable td:not(:first-child) { text-align: right; font-family: 'DM Mono', monospace; font-weight: 500; }
+.rtable tr.we-row { background: #FFFDF7; }
+
+/* 모바일 카드형 */
+@media (max-width: 640px) {
+  .rtable thead { display: none; }
+  .rtable, .rtable tbody { display: block; }
+  .rtable tr { display: block; border-bottom: 1px solid var(--border); padding: 10px 14px; }
+  .rtable tr:last-child { border-bottom: none; }
+  .rtable tr.we-row { background: #FFFDF7; }
+  .rtable td { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border: none; font-size: 13px; text-align: right !important; }
+  .rtable td:first-child { font-weight: 700; margin-bottom: 4px; text-align: left !important; font-family: 'Noto Sans KR', sans-serif; }
+  .rtable td[data-label]::before { content: attr(data-label); font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: 'Noto Sans KR', sans-serif; flex-shrink: 0; margin-right: 8px; text-align: left; }
 }
 
-.c-occupied { background: rgba(200,240,124,0.07); }
-.c-checkout { background: rgba(240,179,91,0.22); color: #f0b35b; }
-.c-checkin { background: rgba(110,207,143,0.22); color: #6ecf8f; }
-.c-both {
-  background: linear-gradient(90deg, rgba(240,179,91,0.25) 50%, rgba(110,207,143,0.25) 50%);
-  color: var(--text2);
-}
-.c-empty {}
-/* Booking.com 셀 스타일 */
-.c-bk-occupied { background: rgba(91,154,216,0.10); }
-.c-bk-checkout { background: rgba(91,154,216,0.28); color: var(--bk-out); }
-.c-bk-checkin  { background: rgba(126,184,245,0.22); color: var(--bk-in); }
-.c-bk-both {
-  background: linear-gradient(90deg, rgba(91,154,216,0.3) 50%, rgba(126,184,245,0.25) 50%);
-  color: var(--text2);
-}
-/* 에어비앤비+부킹닷컴 같은 날: 상하 분할 */
-.c-dual {
-  background: linear-gradient(180deg, rgba(240,179,91,0.18) 50%, rgba(91,154,216,0.22) 50%);
-  color: var(--text2);
-  gap: 0;
-}
-/* Trip.com 셀 스타일 */
-.c-tr-occupied { background: rgba(224,122,95,0.10); }
-.c-tr-checkout { background: rgba(224,122,95,0.28); color: var(--tr-out); }
-.c-tr-checkin  { background: rgba(244,162,97,0.22); color: var(--tr-in); }
-.c-tr-both {
-  background: linear-gradient(90deg, rgba(224,122,95,0.3) 50%, rgba(244,162,97,0.25) 50%);
-  color: var(--text2);
-}
-/* 리브애니웨어 셀 스타일 */
-.c-lv-occupied { background: rgba(167,139,250,0.10); }
-.c-lv-checkout { background: rgba(167,139,250,0.28); color: var(--lv-out); }
-.c-lv-checkin  { background: rgba(196,181,253,0.22); color: var(--lv-in); }
-.c-lv-both {
-  background: linear-gradient(90deg, rgba(167,139,250,0.3) 50%, rgba(196,181,253,0.25) 50%);
-  color: var(--text2);
-}
-.today-ring .cell-inner { outline: 1.5px solid var(--accent); outline-offset: -2px; border-radius: 5px; }
-.cal-row { border-bottom: 0.5px solid var(--border); }
+.tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-right: 3px; }
+.tag.wd { background: var(--wd-bg); color: var(--wd); }
+.tag.we { background: var(--we-bg); color: var(--we); }
 
-/* ── WEEK VIEW ── */
-.week-block { margin-bottom: 20px; }
-.week-label {
-  font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace;
-  margin-bottom: 8px; padding-bottom: 6px;
-  border-bottom: 0.5px solid var(--border);
-}
-.cleaning-cards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.cleaning-card {
-  background: rgba(240,179,91,0.1);
-  border: 0.5px solid rgba(240,179,91,0.3);
-  border-radius: var(--r); padding: 6px 10px;
-  font-size: 11px;
-}
-.cleaning-card strong { color: var(--out); font-weight: 500; }
-.cleaning-card span { color: var(--text2); }
+.col-net { color: var(--green) !important; font-weight: 700 !important; }
+.col-rev { color: var(--bk) !important; font-weight: 700 !important; }
+.col-fee { color: var(--red) !important; font-size: 12px !important; }
+.th-net { color: var(--green) !important; }
+.th-rev { color: var(--bk) !important; }
 
-/* ── SETTINGS PANEL ── */
-.settings-panel {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(4px);
-  display: none; align-items: flex-end;
-}
-.settings-panel.open { display: flex; }
-.settings-sheet {
-  width: 100%; max-height: 85vh;
-  background: var(--surface);
-  border-radius: 20px 20px 0 0;
-  border-top: 0.5px solid var(--border2);
-  overflow: hidden; display: flex; flex-direction: column;
-}
-.sheet-header {
-  padding: 16px 16px 12px;
-  border-bottom: 0.5px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.sheet-title { font-size: 15px; font-weight: 500; }
-.sheet-close {
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 0.5px solid var(--border2);
-  background: var(--surface2); color: var(--text2);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 13px;
-}
-.sheet-body { overflow-y: auto; padding: 16px; flex: 1; }
-.sheet-section { margin-bottom: 20px; }
-.sheet-section-title {
-  font-size: 11px; color: var(--text3); letter-spacing: 0.08em;
-  text-transform: uppercase; margin-bottom: 10px;
-  font-family: 'DM Mono', monospace;
-}
-.ical-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-.ical-input {
-  width: 100%; padding: 10px 12px; font-size: 13px;
-  background: var(--bg); border: 0.5px solid var(--border2);
-  border-radius: var(--r); color: var(--text);
-  font-family: 'DM Sans', sans-serif; outline: none;
-}
-.ical-input::placeholder { color: var(--text3); }
-.ical-input:focus { border-color: var(--accent); }
-.add-btn {
-  width: 100%; padding: 10px; font-size: 13px; font-weight: 500;
-  background: var(--accent); color: #0f0f0f;
-  border: none; border-radius: var(--r); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
-}
-.add-btn:active { opacity: 0.8; }
-.ical-hint { font-size: 11px; color: var(--text3); line-height: 1.6; }
-.room-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
-  background: var(--bg); border: 0.5px solid var(--border);
-  border-radius: var(--r); margin-bottom: 6px;
-}
-.room-item-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.room-item-info { flex: 1; }
-.room-item-name { font-size: 13px; font-weight: 500; }
-.room-item-url { font-size: 10px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
-.room-del {
-  width: 26px; height: 26px; border-radius: 50%;
-  border: 0.5px solid var(--border); background: none;
-  color: var(--text3); cursor: pointer; font-size: 12px;
-  display: flex; align-items: center; justify-content: center;
-}
-.room-del:active { background: rgba(224,96,96,0.15); color: #e06060; }
-.status-pill {
-  font-size: 10px; padding: 2px 7px; border-radius: 20px;
-  font-family: 'DM Mono', monospace;
-  background: rgba(110,207,143,0.15); color: var(--in);
-  border: 0.5px solid rgba(110,207,143,0.3);
-}
-.drag-handle {
-  width: 28px; height: 28px; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: grab; color: var(--text3); font-size: 13px;
-  flex-shrink: 0; touch-action: none;
-  transition: color 0.15s;
-}
-.drag-handle:active { cursor: grabbing; color: var(--text2); }
-.room-item {
-  transition: opacity 0.15s, transform 0.15s;
-}
-.room-item.dragging {
-  opacity: 0.4;
-}
-.room-item.drag-over {
-  border-color: var(--accent) !important;
-  background: rgba(200,240,124,0.06) !important;
-}
-.reorder-hint {
-  font-size: 11px; color: var(--text3); text-align: center;
-  padding: 6px 0 2px; display: flex; align-items: center; justify-content: center; gap: 4px;
-}
-/* 호실 수정 인라인 폼 */
-.room-edit-form {
-  background: var(--bg);
-  border: 0.5px solid var(--accent);
-  border-radius: var(--r);
-  padding: 12px;
-  margin-bottom: 6px;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.room-edit-form .ical-input { font-size: 12px; padding: 8px 10px; }
-.room-edit-actions { display: flex; gap: 7px; }
-.room-edit-save {
-  flex: 1; padding: 8px; font-size: 12px; font-weight: 500;
-  background: var(--accent); color: #0f0f0f;
-  border: none; border-radius: var(--r); cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-}
-.room-edit-cancel {
-  padding: 8px 14px; font-size: 12px;
-  background: none; border: 0.5px solid var(--border2);
-  border-radius: var(--r); color: var(--text2); cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-}
-.room-edit-btn {
-  width: 28px; height: 28px; border-radius: 6px;
-  border: 0.5px solid var(--border); background: none;
-  color: var(--text3); cursor: pointer; font-size: 13px;
-  display: flex; align-items: center; justify-content: center;
-  transition: color 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-}
-.room-edit-btn:active { color: var(--accent); border-color: var(--accent); }
+.footnote { font-size: 11px; color: var(--text3); text-align: center; padding: 20px 16px 0; line-height: 2; }
 
-/* ── BOTTOM NAV LEGEND ── */
-.legend-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(15,15,15,0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 0.5px solid var(--border);
-  padding: 10px 16px 22px;
-  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
-}
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); }
-.legend-box { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-.legend-today { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--accent); }
-
-/* ── SYNC STATUS ── */
-.sync-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 0 12px;
-}
-.sync-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
-.sync-btn {
-  display: flex; align-items: center; gap: 5px;
-  padding: 5px 12px; font-size: 12px;
-  border: 0.5px solid var(--border2); border-radius: 20px;
-  background: none; color: var(--text2); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-}
-.sync-btn:active { background: var(--surface2); }
-@keyframes spin { to { transform: rotate(360deg); } }
-.spin { animation: spin 0.8s linear infinite; display: inline-block; }
-
-/* ── EMPTY STATE ── */
-.empty-state {
-  text-align: center; padding: 40px 20px;
-  color: var(--text3); font-size: 13px; line-height: 1.8;
-}
-.empty-state .big { font-size: 28px; margin-bottom: 10px; }
-.empty-state strong { color: var(--text2); font-weight: 500; }
-
-/* ── PULL-TO-REFRESH HINT ── */
-.ptr-hint { text-align: center; font-size: 11px; color: var(--text3); padding: 8px 0 4px; }
-
-/* ── DETAIL PANEL ── */
-.detail-panel {
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  display: none; align-items: flex-end;
-}
-.detail-panel.open { display: flex; }
-.detail-sheet {
-  width: 100%; max-height: 90vh;
-  background: var(--surface);
-  border-radius: 20px 20px 0 0;
-  border-top: 0.5px solid var(--border2);
-  overflow: hidden; display: flex; flex-direction: column;
-}
-.detail-header {
-  padding: 16px 16px 13px;
-  border-bottom: 0.5px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.detail-title { font-size: 15px; font-weight: 500; flex: 1; }
-.detail-title .room-badge {
-  display: inline-block; padding: 2px 9px; border-radius: 20px;
-  font-size: 12px; font-weight: 500; margin-right: 6px;
-  background: rgba(200,240,124,0.15); color: var(--accent);
-  border: 0.5px solid rgba(200,240,124,0.3);
-}
-.detail-body { overflow-y: auto; padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
-
-.d-section-title {
-  font-size: 11px; color: var(--text3); letter-spacing: 0.08em;
-  text-transform: uppercase; margin-bottom: 10px;
-  font-family: 'DM Mono', monospace;
-}
-
-/* 예약 정보 */
-.bk-info-box {
-  background: var(--bg); border: 0.5px solid var(--border2);
-  border-radius: var(--r); padding: 13px 14px; display: flex; flex-direction: column; gap: 7px;
-}
-.bk-info-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-.bk-info-label { color: var(--text3); font-size: 12px; }
-.bk-info-value { font-family: 'DM Mono', monospace; color: var(--text); }
-.bk-info-value.highlight { color: var(--accent); font-size: 14px; }
-.no-bk { font-size: 13px; color: var(--text3); text-align: center; padding: 18px 0; }
-
-/* 비밀번호 */
-.pw-current-box {
-  background: var(--bg); border: 1px solid rgba(200,240,124,0.25);
-  border-radius: var(--r); padding: 14px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.pw-display-row { display: flex; align-items: center; gap: 10px; }
-.pw-display {
-  flex: 1; font-family: 'DM Mono', monospace; font-size: 22px;
-  font-weight: 500; color: var(--accent); letter-spacing: 0.2em;
-  min-height: 36px; display: flex; align-items: center;
-}
-.pw-display.empty { font-size: 14px; color: var(--text3); letter-spacing: 0; font-weight: 400; }
-.pw-edit-btn {
-  padding: 7px 14px; font-size: 12px; font-weight: 500;
-  border: 0.5px solid var(--border2); border-radius: var(--r);
-  background: var(--surface2); color: var(--text2);
-  cursor: pointer; font-family: 'DM Sans', sans-serif;
-  white-space: nowrap; flex-shrink: 0;
-}
-.pw-edit-btn:active { opacity: 0.7; }
-.pw-edit-row { display: flex; gap: 8px; align-items: center; }
-.pw-input {
-  flex: 1; padding: 10px 12px; font-size: 18px; letter-spacing: 0.2em;
-  background: var(--surface2); border: 0.5px solid var(--accent);
-  border-radius: var(--r); color: var(--accent);
-  font-family: 'DM Mono', monospace; outline: none;
-}
-.pw-input::placeholder { color: var(--text3); letter-spacing: 0; font-size: 13px; }
-.pw-save-btn {
-  padding: 10px 16px; font-size: 13px; font-weight: 500;
-  background: var(--accent); color: #0f0f0f;
-  border: none; border-radius: var(--r); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; white-space: nowrap;
-}
-.pw-save-btn:active { opacity: 0.8; }
-
-.pw-history-title { font-size: 11px; color: var(--text3); margin: 10px 0 6px; }
-.pw-history-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 11px; background: var(--bg);
-  border: 0.5px solid var(--border); border-radius: var(--r); margin-bottom: 4px;
-}
-.pw-history-pw { font-family: 'DM Mono', monospace; color: var(--text2); font-size: 14px; letter-spacing: 0.1em; }
-.pw-history-meta { font-size: 11px; color: var(--text3); text-align: right; }
-.pw-history-meta .bk-range { display: block; }
-
-/* 메모 */
-.memo-input-row { display: flex; gap: 8px; align-items: flex-end; }
-.memo-textarea {
-  flex: 1; padding: 10px 12px; font-size: 13px; min-height: 64px; max-height: 120px;
-  background: var(--bg); border: 0.5px solid var(--border2);
-  border-radius: var(--r); color: var(--text); resize: vertical;
-  font-family: 'DM Sans', sans-serif; outline: none; line-height: 1.5;
-}
-.memo-textarea::placeholder { color: var(--text3); }
-.memo-textarea:focus { border-color: rgba(200,240,124,0.4); }
-.memo-add-btn {
-  padding: 10px 14px; font-size: 13px; font-weight: 500;
-  background: var(--surface2); color: var(--text);
-  border: 0.5px solid var(--border2); border-radius: var(--r); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; white-space: nowrap;
-}
-.memo-add-btn:active { opacity: 0.7; }
-.memo-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.memo-item {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 10px 12px; background: var(--bg);
-  border: 0.5px solid var(--border); border-radius: var(--r);
-}
-.memo-item-body { flex: 1; }
-.memo-item-text { font-size: 13px; color: var(--text); line-height: 1.6; word-break: break-all; }
-.memo-item-date { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: 'DM Mono', monospace; }
-.memo-del {
-  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-  border: 0.5px solid var(--border); background: none;
-  color: var(--text3); cursor: pointer; font-size: 11px;
-  display: flex; align-items: center; justify-content: center;
-}
-.memo-del:active { background: rgba(224,96,96,0.15); color: #e06060; }
-.memo-edit-btn {
-  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-  border: 0.5px solid var(--border); background: none;
-  color: var(--text3); cursor: pointer; font-size: 12px;
-  display: flex; align-items: center; justify-content: center;
-}
-.memo-edit-btn:active { background: rgba(200,240,124,0.15); color: var(--accent); }
-
-/* 셀 클릭 피드백 */
-.day-cell { cursor: pointer; }
-.day-cell:active .cell-inner { filter: brightness(1.4); }
+@media (max-width: 799px) { .sec-title-result { margin-top: 28px; } }
 </style>
 </head>
 <body>
 
-<div class="app-header">
-  <div class="header-top">
-    <div class="app-title">HANA <span>STAY</span></div>
-    <div class="header-actions">
-      <button class="icon-btn" id="todayBtn" title="오늘">●</button>
-      <button class="icon-btn" id="settingsBtn" title="호실 설정">☰</button>
-    </div>
-  </div>
-  <div class="nav-row">
-    <button class="nav-arrow" id="prevBtn">‹</button>
-    <div class="nav-center">
-      <div class="month-display" id="monthDisplay"></div>
-    </div>
-    <button class="nav-arrow" id="nextBtn">›</button>
-    <div class="view-tabs">
-      <button class="view-tab active" id="monthTab">월간</button>
-      <button class="view-tab" id="weekTab">주간</button>
-      <button class="view-tab" id="multiTab">연속</button>
-    </div>
-  </div>
+<div class="header">
+  <span class="header-brand">HANA STAY</span>
+  <span class="header-sub">요금 계산기 v8</span>
 </div>
-
-<div class="today-banner" id="todayBanner"></div>
 
 <div class="main">
-  <div class="sync-row">
-    <span class="sync-time" id="syncTime">—</span>
-    <button class="sync-btn" id="syncBtn">
-      <span id="syncIcon">↻</span> 새로고침
-    </button>
-  </div>
-  <div id="calendarArea"></div>
-</div>
+  <div class="layout">
 
-<div class="legend-bar">
-  <div class="legend-item" style="color:var(--text2);font-size:10px;font-weight:500;margin-right:2px;">✈</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(240,179,91,0.35);border:0.5px solid rgba(240,179,91,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(110,207,143,0.35);border:0.5px solid rgba(110,207,143,0.5);"></div>인</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(200,240,124,0.07);border:0.5px solid rgba(200,240,124,0.15);"></div>숙박</div>
-  <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-item" style="color:var(--bk-out);font-size:10px;font-weight:500;margin-right:2px;">🏨</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(91,154,216,0.3);border:0.5px solid rgba(91,154,216,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(126,184,245,0.25);border:0.5px solid rgba(126,184,245,0.4);"></div>인</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(91,154,216,0.1);border:0.5px solid rgba(91,154,216,0.2);"></div>숙박</div>
-  <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-item" style="color:var(--tr-out);font-size:10px;font-weight:500;margin-right:2px;">🌐</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(224,122,95,0.3);border:0.5px solid rgba(224,122,95,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(244,162,97,0.25);border:0.5px solid rgba(244,162,97,0.4);"></div>인</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(224,122,95,0.1);border:0.5px solid rgba(224,122,95,0.2);"></div>숙박</div>
-  <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-item" style="color:var(--lv-out);font-size:10px;font-weight:500;margin-right:2px;">🏡</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.3);border:0.5px solid rgba(167,139,250,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(196,181,253,0.25);border:0.5px solid rgba(196,181,253,0.4);"></div>인</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.1);border:0.5px solid rgba(167,139,250,0.2);"></div>숙박</div>
-  <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-today"></div><span style="font-size:11px;color:var(--text3);">오늘</span>
-</div>
+    <!-- 입력 -->
+    <div class="col-input">
 
-<!-- Detail Panel (예약 단위 비밀번호/메모) -->
-<div class="detail-panel" id="detailPanel">
-  <div class="detail-sheet">
-    <div class="detail-header">
-      <div class="detail-title" id="detailTitle"></div>
-      <button class="sheet-close" id="closeDetail">✕</button>
-    </div>
-    <div class="detail-body">
-
-      <div id="detailBkSection">
-        <div class="d-section-title">예약 정보</div>
-        <div id="detailBkInfo"></div>
-      </div>
-
-      <div id="detailPwSection">
-        <div class="d-section-title">🔑 도어락 비밀번호</div>
-        <div id="pwSectionBody"></div>
-      </div>
-
-      <div>
-        <div class="d-section-title">📝 메모</div>
-        <div class="memo-input-row">
-          <textarea class="memo-textarea" id="memoInput" placeholder="이 예약에 대한 메모를 입력하세요..."></textarea>
-          <button class="memo-add-btn" id="memoAddBtn">추가</button>
+      <div class="sec-title">Airbnb 기준 설정</div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="pbadge ab">Airbnb</span>
+          <span class="panel-sub">요금 입력 → 순수익 계산 기준</span>
         </div>
-        <div class="memo-list" id="memoList"></div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- Settings Sheet -->
-<div class="settings-panel" id="settingsPanel">
-  <div class="settings-sheet">
-    <div class="sheet-header">
-      <span class="sheet-title">호실 관리</span>
-      <button class="sheet-close" id="closeSettings">✕</button>
-    </div>
-    <div class="sheet-body">
-      <div class="sheet-section">
-        <div class="sheet-section-title">호실 추가 (iCal 연동)</div>
-        <div class="ical-form">
-          <input class="ical-input" id="inputName" placeholder="호실명 (예: 302호)" maxlength="20">
-          <input class="ical-input" id="inputUrl" placeholder="✈ Airbnb iCal URL (webcal://...)" autocomplete="off">
-          <input class="ical-input" id="inputBkUrl" placeholder="🏨 Booking.com iCal URL (webcal://...)" autocomplete="off">
-          <input class="ical-input" id="inputTrUrl" placeholder="🌐 Trip.com iCal URL (webcal://...)" autocomplete="off">
-          <input class="ical-input" id="inputLvUrl" placeholder="🏡 리브애니웨어 iCal URL (webcal://...)" autocomplete="off">
-        </div>
-        <button class="add-btn" id="addRoomBtn">+ 호실 추가</button>
-        <div style="height:10px;"></div>
-        <div class="ical-hint">
-          ✈ <strong style="color:#c8f07c">Airbnb</strong>: 앱 → 숙소 관리 → 달력 → ··· → 달력 내보내기<br>
-          🏨 <strong style="color:#5b9ad8">Booking.com</strong>: Extranet → 객실 → 달력 동기화 → iCal 내보내기<br>
-          🌐 <strong style="color:#e07a5f">Trip.com</strong>: 파트너 센터 → 예약 → 달력 동기화 → iCal 내보내기<br>
-          🏡 <strong style="color:#a78bfa">리브애니웨어</strong>: 파트너 센터 → 숙소 관리 → 달력 동기화 → iCal 내보내기
+        <div class="panel-body">
+          <div class="row2" style="margin-bottom:12px">
+            <div class="field">
+              <label>수수료율 (%)</label>
+              <input type="number" id="ab_fee" value="15.5" step="0.5" inputmode="decimal" oninput="calc()">
+              <span class="hint">2025.10~ 기본 15.5%</span>
+            </div>
+            <div class="field">
+              <label>프로모션 할인 (%)</label>
+              <input type="number" id="ab_promo" value="0" step="1" min="0" max="50" inputmode="decimal" oninput="calc()">
+              <span class="hint">장기할인 등 적용 시</span>
+            </div>
+          </div>
+          <div class="ab-price-row">
+            <div class="wlabel wd"><span class="dot"></span>주중</div>
+            <div class="field">
+              <label>1박 요금 (원)</label>
+              <input type="number" id="ab_wd_p" value="280000" step="1000" inputmode="numeric" oninput="calc()">
+            </div>
+          </div>
+          <div class="ab-price-row">
+            <div class="wlabel we"><span class="dot"></span>주말</div>
+            <div class="field">
+              <label>1박 요금 (원)</label>
+              <input type="number" id="ab_we_p" value="330000" step="1000" inputmode="numeric" oninput="calc()">
+            </div>
+          </div>
         </div>
       </div>
-      <div class="sheet-section">
-        <div class="sheet-section-title">등록된 호실 (<span id="roomCount">0</span>/9)</div>
-        <div id="roomList"></div>
+
+      <div class="sec-title">다른 플랫폼 — 역산 설정</div>
+      <div class="panel">
+        <div class="panel-head"><span class="pbadge bk">Booking.com</span><span class="panel-sub">동일 순수익 달성 등록가 역산</span></div>
+        <div class="panel-body">
+          <div class="row2">
+            <div class="field">
+              <label>커미션율 (%)</label>
+              <input type="number" id="bk_comm" value="17.5" step="0.5" inputmode="decimal" oninput="calc()">
+            </div>
+            <div class="field">
+              <label>프로모션 할인 (%)</label>
+              <input type="number" id="bk_promo" value="10" step="1" min="0" max="60" inputmode="decimal" oninput="calc()">
+              <span class="hint">Genius·모바일 등 합산</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <div class="panel">
+        <div class="panel-head"><span class="pbadge tr">Trip.com</span><span class="panel-sub">동일 순수익 달성 등록가 역산</span></div>
+        <div class="panel-body">
+          <div class="row2">
+            <div class="field">
+              <label>커미션율 (%)</label>
+              <input type="number" id="tr_comm" value="15" step="0.5" inputmode="decimal" oninput="calc()">
+            </div>
+            <div class="field">
+              <label>프로모션 할인 (%)</label>
+              <input type="number" id="tr_promo" value="0" step="1" min="0" max="60" inputmode="decimal" oninput="calc()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span class="pbadge lv">리브애니웨어</span><span class="panel-sub">동일 순수익 달성 등록가 역산</span></div>
+        <div class="panel-body">
+          <div class="row2">
+            <div class="field">
+              <label>수수료율 (%)</label>
+              <input type="number" id="lv_comm" value="10" step="0.5" inputmode="decimal" oninput="calc()">
+            </div>
+            <div class="field">
+              <label>프로모션 할인 (%)</label>
+              <input type="number" id="lv_promo" value="0" step="1" min="0" max="60" inputmode="decimal" oninput="calc()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">공통 설정</div>
+      <div class="panel">
+        <div class="panel-body">
+          <div class="row2" style="margin-bottom:10px">
+            <div class="field">
+              <label>청소비 (원)</label>
+              <input type="number" id="clean" value="50000" step="1000" inputmode="numeric" oninput="calc()">
+              <span class="hint">직접 시 재료비, 외주 시 외주비</span>
+            </div>
+            <div class="field">
+              <label>1인 추가요금 (원)</label>
+              <input type="number" id="extra" value="18000" step="1000" inputmode="numeric" oninput="calc()">
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>기준인원</label>
+              <input type="number" id="base_g" value="2" min="1" max="10" inputmode="numeric" oninput="calc()">
+            </div>
+            <div class="field">
+              <label>최대인원</label>
+              <input type="number" id="max_g" value="4" min="1" max="10" inputmode="numeric" oninput="calc()">
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
+
+    <!-- 결과 -->
+    <div class="col-result">
+      <div class="sec-title sec-title-result">결과</div>
+      <div class="result-wrap" id="result_wrap"></div>
+      <p class="footnote" id="footnote_area"></p>
+    </div>
+
   </div>
 </div>
 
 <script>
-const COLORS = ['#c8f07c','#6ecf8f','#5bc8d8','#7fa8f5','#c07aee','#f07cc8','#f0b35b','#f07070','#a8d88a'];
-const DAY_KO = ['일','월','화','수','목','금','토'];
-const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+function won(n) { return '₩' + Math.round(n).toLocaleString('ko-KR'); }
 
-const MONTHS_TO_SHOW = 6; // ← 여기서 표시 개월 수 조절 (3→6)
-
-let curY, curM, viewMode = 'month';
-let rooms = [];
-
-const PROXY_URL = 'https://ical-proxy.vagabond1984.workers.dev';
-
-function today() { const d = new Date(); return {y:d.getFullYear(),m:d.getMonth(),d:d.getDate()}; }
-function daysIn(y,m) { return new Date(y,m+1,0).getDate(); }
-
-// Storage — KV 서버 + localStorage 동시 저장
-async function saveRooms() {
-  const data = rooms.map(r=>({name:r.name,url:r.url,bkUrl:r.bkUrl||'',trUrl:r.trUrl||'',lvUrl:r.lvUrl||'',color:r.color}));
-  try { localStorage.setItem('hana_rooms', JSON.stringify(data)); } catch(e){}
-  try {
-    await fetch(`${PROXY_URL}/rooms`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(data)
-    });
-  } catch(e){}
+// 실효 차감률: 프로모+수수료 합산
+function effectiveRate(comm, promo) {
+  return promo / 100 + (1 - promo / 100) * comm / 100;
 }
 
-async function loadRooms() {
-  try {
-    const resp = await fetch(`${PROXY_URL}/rooms`);
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.length > 0) {
-        rooms = data.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
-        try { localStorage.setItem('hana_rooms', JSON.stringify(data)); } catch(e){}
-        return;
-      }
-    }
-  } catch(e){}
-  try {
-    const d = JSON.parse(localStorage.getItem('hana_rooms')||'[]');
-    rooms = d.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
-  } catch(e){ rooms=[]; }
+// 에어비앤비 순수익 계산
+function abNet(price, extra, guests, baseG, fee, promo, clean) {
+  const extraAmt = (guests - baseG) * extra;
+  const listed   = price + extraAmt;
+  const deduct   = listed * effectiveRate(fee, promo);
+  const net      = listed - deduct - clean;
+  return { listed, deduct, net };
 }
 
-function parseIcal(text) {
-  const bookings = [];
-  const events = text.split('BEGIN:VEVENT');
-  for (let i = 1; i < events.length; i++) {
-    const ev = events[i];
-    const dtstart = ev.match(/DTSTART(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const summary = ev.match(/SUMMARY:(.*)/);
-    if (!dtstart || !dtend) continue;
-    const title = summary ? summary[1].trim().toLowerCase() : '';
-    if (title === 'not available' || title === 'airbnb (not available)') continue;
-    const parseD = s => {
-      const y=+s.slice(0,4), m=+s.slice(4,6)-1, d=+s.slice(6,8);
-      return {y,m,d};
-    };
-    const s = parseD(dtstart[1]);
-    const e = parseD(dtend[1]);
-    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d });
-  }
-  return bookings;
+// 다른 플랫폼 역산: 에어비앤비와 동일한 순수익(청소비 동일 조건)이 되려면 등록가가 얼마여야 하나
+// net = listed - listed*rate - clean
+// listed = (net + clean) / (1 - rate)
+function reverseList(targetNet, comm, promo, clean) {
+  const rate = effectiveRate(comm, promo);
+  const keep = 1 - rate;
+  if (keep <= 0) return null;
+  return (targetNet + clean) / keep;
 }
 
-function parseIcalBooking(text) {
-  const bookings = [];
-  const events = text.split('BEGIN:VEVENT');
-  for (let i = 1; i < events.length; i++) {
-    const ev = events[i];
-    const dtstart = ev.match(/DTSTART(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const summary = ev.match(/SUMMARY:(.*)/);
-    if (!dtstart || !dtend) continue;
-    const title = summary ? summary[1].trim().toLowerCase() : '';
-    if (title === 'closed' || title === 'not available' || title === '') continue;
-    const parseD = s => { const y=+s.slice(0,4),m=+s.slice(4,6)-1,d=+s.slice(6,8); return {y,m,d}; };
-    const s = parseD(dtstart[1]);
-    const e = parseD(dtend[1]);
-    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d, src:'booking' });
-  }
-  return bookings;
+function makeAbRow(isWe, guests, listed, deduct, net) {
+  const cls = isWe ? ' class="we-row"' : '';
+  const tag = `<span class="tag ${isWe?'we':'wd'}">${isWe?'주말':'주중'}</span>`;
+  return `<tr${cls}>
+    <td>${tag}${guests}인</td>
+    <td data-label="등록가">${won(listed)}</td>
+    <td data-label="수수료·프로모" class="col-fee">−${won(deduct)}</td>
+    <td data-label="청소비" class="col-fee">−${won(+document.getElementById('clean').value||0)}</td>
+    <td data-label="순수익" class="col-net">${won(net)}</td>
+  </tr>`;
 }
 
-function parseIcalTrip(text) {
-  const bookings = [];
-  const events = text.split('BEGIN:VEVENT');
-  for (let i = 1; i < events.length; i++) {
-    const ev = events[i];
-    const dtstart = ev.match(/DTSTART(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const summary = ev.match(/SUMMARY:(.*)/);
-    if (!dtstart || !dtend) continue;
-    const title = summary ? summary[1].trim().toLowerCase() : '';
-    if (title === 'not available' || title === 'closed' || title === '') continue;
-    const parseD = s => { const y=+s.slice(0,4),m=+s.slice(4,6)-1,d=+s.slice(6,8); return {y,m,d}; };
-    const s = parseD(dtstart[1]);
-    const e = parseD(dtend[1]);
-    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d, src:'trip' });
-  }
-  return bookings;
+function makeRevRow(isWe, guests, revListed, net) {
+  const cls = isWe ? ' class="we-row"' : '';
+  const tag = `<span class="tag ${isWe?'we':'wd'}">${isWe?'주말':'주중'}</span>`;
+  return `<tr${cls}>
+    <td>${tag}${guests}인</td>
+    <td data-label="역산 등록가" class="col-rev">${won(revListed)}</td>
+    <td data-label="동일 순수익" class="col-net">${won(net)}</td>
+  </tr>`;
 }
 
-function parseIcalLv(text) {
-  const bookings = [];
-  const events = text.split('BEGIN:VEVENT');
-  for (let i = 1; i < events.length; i++) {
-    const ev = events[i];
-    const dtstart = ev.match(/DTSTART(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const dtend   = ev.match(/DTEND(?:;VALUE=DATE)?[:\;][^\r\n]*?(\d{8})/);
-    const summary = ev.match(/SUMMARY:(.*)/);
-    if (!dtstart || !dtend) continue;
-    const title = summary ? summary[1].trim().toLowerCase() : '';
-    if (title === 'not available' || title === 'closed' || title === '') continue;
-    const parseD = s => { const y=+s.slice(0,4),m=+s.slice(4,6)-1,d=+s.slice(6,8); return {y,m,d}; };
-    const s = parseD(dtstart[1]);
-    const e = parseD(dtend[1]);
-    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d, src:'lv' });
-  }
-  return bookings;
+function abHeader() {
+  return `<thead><tr>
+    <th>구분</th><th>등록가</th><th>수수료·프로모</th><th>청소비</th>
+    <th class="th-net">순수익</th>
+  </tr></thead>`;
+}
+function revHeader() {
+  return `<thead><tr>
+    <th>구분</th>
+    <th class="th-rev">역산 등록가</th>
+    <th class="th-net">순수익 (Airbnb 동일)</th>
+  </tr></thead>`;
 }
 
-async function fetchIcal(room) {
-  if (!room.url || room.url === '') return [];
-  try {
-    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.url)}`);
-    if (!resp.ok) return [];
-    return parseIcal(await resp.text());
-  } catch(e) { return []; }
-}
-
-async function fetchBkIcal(room) {
-  if (!room.bkUrl || room.bkUrl === '') return [];
-  try {
-    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.bkUrl)}`);
-    if (!resp.ok) return [];
-    return parseIcalBooking(await resp.text());
-  } catch(e) { return []; }
-}
-
-async function fetchTrIcal(room) {
-  if (!room.trUrl || room.trUrl === '') return [];
-  try {
-    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.trUrl)}`);
-    if (!resp.ok) return [];
-    return parseIcalTrip(await resp.text());
-  } catch(e) { return []; }
-}
-
-async function fetchLvIcal(room) {
-  if (!room.lvUrl || room.lvUrl === '') return [];
-  try {
-    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.lvUrl)}`);
-    if (!resp.ok) return [];
-    return parseIcalLv(await resp.text());
-  } catch(e) { return []; }
-}
-
-async function syncAll() {
-  const icon = document.getElementById('syncIcon');
-  icon.classList.add('spin');
-  document.getElementById('syncTime').textContent = '불러오는 중...';
-  const [abResults, bkResults, trResults, lvResults] = await Promise.all([
-    Promise.all(rooms.map(r => fetchIcal(r))),
-    Promise.all(rooms.map(r => fetchBkIcal(r))),
-    Promise.all(rooms.map(r => fetchTrIcal(r))),
-    Promise.all(rooms.map(r => fetchLvIcal(r)))
-  ]);
-  rooms.forEach((r,i) => { r.bookings = abResults[i]; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; r.lvBookings = lvResults[i]; });
-  icon.classList.remove('spin');
-  const now = new Date();
-  document.getElementById('syncTime').textContent =
-    `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 기준`;
-  render();
-}
-
-function cellTypeFor(bookings, day, y, m) {
-  let occupied=false, isOut=false, isIn=false;
-  const cur = new Date(y, m, day);
-  for (const bk of bookings) {
-    const cin  = new Date(bk.cinY,  bk.cinM,  bk.cinD);
-    const cout = new Date(bk.coutY, bk.coutM, bk.coutD);
-    if (cur.getTime() === cout.getTime()) isOut = true;
-    if (cur.getTime() === cin.getTime())  isIn  = true;
-    if (cur > cin && cur < cout)          occupied = true;
-  }
-  if (isOut && isIn) return 'both';
-  if (isOut) return 'checkout';
-  if (isIn)  return 'checkin';
-  if (occupied) return 'occupied';
-  return 'empty';
-}
-
-function cellType(room, day, y, m) {
-  return cellTypeFor(room.bookings || [], day, y, m);
-}
-
-function ioTxt(ct) {
-  if (ct==='checkout') return '아웃';
-  if (ct==='checkin')  return '인';
-  if (ct==='both')     return '↕';
-  return '';
-}
-
-function cellClsAndLbl(room, day, y, m) {
-  const ab = cellTypeFor(room.bookings   || [], day, y, m);
-  const bk = cellTypeFor(room.bkBookings || [], day, y, m);
-  const tr = cellTypeFor(room.trBookings || [], day, y, m);
-  const lv = cellTypeFor(room.lvBookings || [], day, y, m);
-
-  const abEmpty = ab === 'empty';
-  const bkEmpty = bk === 'empty';
-  const trEmpty = tr === 'empty';
-  const lvEmpty = lv === 'empty';
-
-  if (abEmpty && bkEmpty && trEmpty && lvEmpty) return {cls:'c-empty', lbl:''};
-
-  if (bkEmpty && trEmpty && lvEmpty) {
-    const txt = ioTxt(ab);
-    if (!txt) return {cls:'c-occupied', lbl:''};
-    return {cls:'c-'+ab, lbl:`<span class="cell-icon">✈</span><span class="cell-txt">${txt}</span>`};
-  }
-  if (abEmpty && trEmpty && lvEmpty) {
-    const txt = ioTxt(bk);
-    if (!txt) return {cls:'c-bk-occupied', lbl:''};
-    return {cls:'c-bk-'+bk, lbl:`<span class="cell-icon">🏨</span><span class="cell-txt">${txt}</span>`};
-  }
-  if (abEmpty && bkEmpty && lvEmpty) {
-    const txt = ioTxt(tr);
-    if (!txt) return {cls:'c-tr-occupied', lbl:''};
-    return {cls:'c-tr-'+tr, lbl:`<span class="cell-icon">🌐</span><span class="cell-txt">${txt}</span>`};
-  }
-  if (abEmpty && bkEmpty && trEmpty) {
-    const txt = ioTxt(lv);
-    if (!txt) return {cls:'c-lv-occupied', lbl:''};
-    return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${txt}</span>`};
-  }
-
-  const parts = [];
-  if (!abEmpty) parts.push(ioTxt(ab)
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#f0b35b;"><span>✈</span><span>${ioTxt(ab)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(200,240,124,0.5);">✈</span>`);
-  if (!bkEmpty) parts.push(ioTxt(bk)
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#5b9ad8;"><span>🏨</span><span>${ioTxt(bk)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(91,154,216,0.5);">🏨</span>`);
-  if (!trEmpty) parts.push(ioTxt(tr)
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#e07a5f;"><span>🌐</span><span>${ioTxt(tr)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(224,122,95,0.5);">🌐</span>`);
-  if (!lvEmpty) parts.push(ioTxt(lv)
-    ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${ioTxt(lv)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`);
-  return {cls:'c-dual', lbl: parts.join('')};
-}
-
-function renderMonthBlock(y, m) {
-  const t = today();
-  const days = daysIn(y, m);
-  let html = `<div style="margin-bottom:24px;">
-    <div style="font-size:13px;font-weight:500;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid var(--border);">${y}년 ${m+1}월</div>
-    <div class="cal-scroll"><table class="cal-table"><thead><tr><th class="room-th"></th>`;
-  for (let d=1; d<=days; d++) {
-    const dow = new Date(y,m,d).getDay();
-    const isT = y===t.y && m===t.m && d===t.d;
-    const cls = isT?'today-hd':dow===0?'sun':dow===6?'sat':'';
-    html += `<th class="day-th ${cls}">${d}<br><span class="dname">${DAY_KO[dow]}</span></th>`;
-  }
-  html += '</tr></thead><tbody>';
-  for (const r of rooms) {
-    const ri = rooms.indexOf(r);
-    html += `<tr class="cal-row"><td class="room-th"><div class="room-th-inner"><div class="room-dot" style="background:${r.color}"></div>${r.name}</div></td>`;
-    for (let d=1; d<=days; d++) {
-      const {cls:mbCls, lbl:mbLbl} = cellClsAndLbl(r,d,y,m);
-      const isT = y===t.y && m===t.m && d===t.d;
-      html += `<td class="day-cell${isT?' today-ring':''}" data-ri="${ri}" data-y="${y}" data-m="${m}" data-d="${d}"><div class="cell-inner ${mbCls}">${mbLbl}</div></td>`;
-    }
-    html += '</tr>';
-  }
-  return html + '</tbody></table></div></div>';
-}
-
-function updateTodayBanner() {
-  const t = today();
-  let outs=[], ins=[];
-  if (curY===t.y && curM===t.m) {
-    for (const r of rooms) {
-      const ab = cellTypeFor(r.bookings||[], t.d, t.y, t.m);
-      const bk = cellTypeFor(r.bkBookings||[], t.d, t.y, t.m);
-      const tr = cellTypeFor(r.trBookings||[], t.d, t.y, t.m);
-      const lv = cellTypeFor(r.lvBookings||[], t.d, t.y, t.m);
-      if (ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'||lv==='checkout'||lv==='both') outs.push(r.name);
-      if (ab==='checkin' ||ab==='both'||bk==='checkin' ||bk==='both'||tr==='checkin' ||tr==='both'||lv==='checkin' ||lv==='both') ins.push(r.name);
-    }
-  }
-  const dname = DAY_KO[new Date(t.y,t.m,t.d).getDay()];
-  document.getElementById('todayBanner').innerHTML = `
-    <div>
-      <div class="today-date" style="margin-bottom:2px;">오늘</div>
-      <div class="today-date"><strong>${t.m+1}월 ${t.d}일 (${dname})</strong></div>
+function card(cls, name, meta, tableHtml) {
+  return `<div class="result-card">
+    <div class="result-card-head">
+      <span class="rcard-title ${cls}">${name}</span>
+      <span class="rcard-meta">${meta}</span>
     </div>
-    <div class="today-counts">
-      <div class="today-count">
-        <div class="num out">${outs.length}</div>
-        <div class="lbl">체크아웃</div>
-      </div>
-      <div class="today-count">
-        <div class="num inc">${ins.length}</div>
-        <div class="lbl">체크인</div>
-      </div>
-    </div>
-  `;
+    <table class="rtable">${tableHtml}</table>
+  </div>`;
 }
 
-function renderMonth() {
-  if (!rooms.length) {
-    return `<div class="empty-state">
-      <div class="big">🏠</div>
-      <strong>호실이 없어요</strong><br>
-      오른쪽 상단 ☰ 를 눌러<br>iCal 링크로 호실을 추가해보세요.
-    </div>`;
-  }
-  const t = today();
-  const months = [];
-  for (let i = 0; i < MONTHS_TO_SHOW; i++) {
-    let y = curY, m = curM + i;
-    while (m > 11) { m -= 12; y++; }
-    months.push({y, m});
-  }
+function calc() {
+  const abWdP  = +document.getElementById('ab_wd_p').value || 0;
+  const abWeP  = +document.getElementById('ab_we_p').value || 0;
+  const abFee  = +document.getElementById('ab_fee').value  || 15.5;
+  const abPrmo = +document.getElementById('ab_promo').value|| 0;
+  const bkComm = +document.getElementById('bk_comm').value || 17.5;
+  const bkPrmo = +document.getElementById('bk_promo').value|| 0;
+  const trComm = +document.getElementById('tr_comm').value || 15;
+  const trPrmo = +document.getElementById('tr_promo').value|| 0;
+  const lvComm = +document.getElementById('lv_comm').value || 10;
+  const lvPrmo = +document.getElementById('lv_promo').value|| 0;
+  const clean  = +document.getElementById('clean').value   || 0;
+  const extra  = +document.getElementById('extra').value   || 0;
+  const baseG  = +document.getElementById('base_g').value  || 2;
+  const maxG   = +document.getElementById('max_g').value   || 4;
 
-  let html = `<div class="cal-scroll"><table class="cal-table"><thead>`;
+  let abRows='', bkRows='', trRows='', lvRows='';
 
-  // 월 라벨 행
-  html += `<tr><th class="room-th" style="position:sticky;left:0;background:var(--bg);z-index:6;"></th>`;
-  for (const {y, m} of months) {
-    const days = daysIn(y, m);
-    html += `<th colspan="${days}" style="text-align:left;padding:0 6px 6px;font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;font-weight:500;border-bottom:0.5px solid var(--border);border-left:1.5px solid var(--border2);white-space:nowrap;">${y}.${String(m+1).padStart(2,'0')}</th>`;
-  }
-  html += '</tr>';
+  for (let g = baseG; g <= maxG; g++) {
+    // 에어비앤비
+    const wd = abNet(abWdP, extra, g, baseG, abFee, abPrmo, clean);
+    const we = abNet(abWeP, extra, g, baseG, abFee, abPrmo, clean);
+    abRows += makeAbRow(false, g, wd.listed, wd.deduct, wd.net);
+    abRows += makeAbRow(true,  g, we.listed, we.deduct, we.net);
 
-  // 날짜/요일 행
-  html += `<tr><th class="room-th" style="position:sticky;left:0;background:var(--bg);z-index:6;"></th>`;
-  for (const {y, m} of months) {
-    const days = daysIn(y, m);
-    for (let d=1; d<=days; d++) {
-      const dow = new Date(y,m,d).getDay();
-      const isT = y===t.y && m===t.m && d===t.d;
-      const cls = isT?'today-hd':dow===0?'sun':dow===6?'sat':'';
-      const sepStyle = d===1 ? 'border-left:1.5px solid var(--border2);' : '';
-      html += `<th class="day-th ${cls}" style="${sepStyle}">${d}<br><span class="dname">${DAY_KO[dow]}</span></th>`;
-    }
-  }
-  html += '</tr></thead><tbody>';
+    // 역산 — 동일 청소비 조건
+    const bkWd = reverseList(wd.net, bkComm, bkPrmo, clean);
+    const bkWe = reverseList(we.net, bkComm, bkPrmo, clean);
+    const trWd = reverseList(wd.net, trComm, trPrmo, clean);
+    const trWe = reverseList(we.net, trComm, trPrmo, clean);
+    const lvWd = reverseList(wd.net, lvComm, lvPrmo, clean);
+    const lvWe = reverseList(we.net, lvComm, lvPrmo, clean);
 
-  for (const r of rooms) {
-    const ri = rooms.indexOf(r);
-    html += `<tr class="cal-row"><td class="room-th" style="position:sticky;left:0;background:var(--bg);z-index:4;"><div class="room-th-inner"><div class="room-dot" style="background:${r.color}"></div>${r.name}</div></td>`;
-    for (const {y, m} of months) {
-      const days = daysIn(y, m);
-      for (let d=1; d<=days; d++) {
-        const {cls, lbl} = cellClsAndLbl(r,d,y,m);
-        const isT = y===t.y && m===t.m && d===t.d;
-        const sepStyle = d===1 ? 'border-left:1.5px solid var(--border2);' : '';
-        html += `<td class="day-cell${isT?' today-ring':''}" style="${sepStyle}" data-ri="${ri}" data-y="${y}" data-m="${m}" data-d="${d}"><div class="cell-inner ${cls}">${lbl}</div></td>`;
-      }
-    }
-    html += '</tr>';
-  }
-  html += '</tbody></table></div>';
-  return html;
-}
-
-function renderWeek() {
-  if (!rooms.length) {
-    return `<div class="empty-state"><div class="big">🏠</div><strong>호실이 없어요</strong><br>오른쪽 상단 ☰ 를 눌러 추가하세요.</div>`;
-  }
-  const t = today();
-  const days = daysIn(curY, curM);
-  let weeks=[]; let wk=[];
-  for (let d=1;d<=days;d++) {
-    wk.push(d);
-    const dow = new Date(curY,curM,d).getDay();
-    if (dow===6||d===days){ weeks.push([...wk]); wk=[]; }
-  }
-  let html='';
-  for (const week of weeks) {
-    const ws=week[0], we=week[week.length-1];
-    html += `<div class="week-block">
-      <div class="week-label">${curM+1}월 ${ws}일 — ${we}일</div>
-      <div class="cal-scroll"><table class="cal-table"><thead><tr><th class="room-th"></th>`;
-    for (const d of week) {
-      const dow=new Date(curY,curM,d).getDay();
-      const isT=curY===t.y&&curM===t.m&&d===t.d;
-      const cls=isT?'today-hd':dow===0?'sun':dow===6?'sat':'';
-      html+=`<th class="day-th ${cls}">${d}<br><span class="dname">${DAY_KO[dow]}</span></th>`;
-    }
-    html+='</tr></thead><tbody>';
-    for (const r of rooms) {
-      const ri = rooms.indexOf(r);
-      html+=`<tr class="cal-row"><td class="room-th"><div class="room-th-inner"><div class="room-dot" style="background:${r.color}"></div>${r.name}</div></td>`;
-      for (const d of week) {
-        const {cls:wCls, lbl:wLbl} = cellClsAndLbl(r,d,curY,curM);
-        const isT=curY===t.y&&curM===t.m&&d===t.d;
-        html+=`<td class="day-cell${isT?' today-ring':''}" data-ri="${ri}" data-y="${curY}" data-m="${curM}" data-d="${d}"><div class="cell-inner ${wCls}">${wLbl}</div></td>`;
-      }
-      html+='</tr>';
-    }
-    html+='</tbody></table></div>';
-
-    const coMap={};
-    for (const d of week) {
-      for (const r of rooms) {
-        const ab=cellTypeFor(r.bookings||[],d,curY,curM);
-        const bk=cellTypeFor(r.bkBookings||[],d,curY,curM);
-        const tr=cellTypeFor(r.trBookings||[],d,curY,curM);
-        const lv=cellTypeFor(r.lvBookings||[],d,curY,curM);
-        if(ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'||lv==='checkout'||lv==='both'){
-          if(!coMap[d]) coMap[d]=[];
-          coMap[d].push(r.name);
-        }
-      }
-    }
-    const coKeys=Object.keys(coMap);
-    if (coKeys.length) {
-      html+='<div class="cleaning-cards">';
-      for (const d of coKeys) {
-        const dow=new Date(curY,curM,+d).getDay();
-        html+=`<div class="cleaning-card"><strong>${curM+1}/${d}(${DAY_KO[dow]}) 청소</strong><br><span>${coMap[d].join(' · ')}</span></div>`;
-      }
-      html+='</div>';
-    }
-    html+='</div>';
-  }
-  return html;
-}
-
-let dragSrcIdx = null;
-
-function renderRoomList() {
-  const list = document.getElementById('roomList');
-  document.getElementById('roomCount').textContent = rooms.length;
-  if (!rooms.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0;">아직 등록된 호실이 없어요.</div>';
-    return;
+    if (bkWd) bkRows += makeRevRow(false, g, bkWd, wd.net);
+    if (bkWe) bkRows += makeRevRow(true,  g, bkWe, we.net);
+    if (trWd) trRows += makeRevRow(false, g, trWd, wd.net);
+    if (trWe) trRows += makeRevRow(true,  g, trWe, we.net);
+    if (lvWd) lvRows += makeRevRow(false, g, lvWd, wd.net);
+    if (lvWe) lvRows += makeRevRow(true,  g, lvWe, we.net);
   }
 
-  function roomItemHtml(r, i) {
-    const linked = r.url || r.bkUrl || r.trUrl || r.lvUrl;
-    const urlLabel = [r.url?'✈ 에어비앤비':'', r.bkUrl?'🏨 부킹닷컴':'', r.trUrl?'🌐 트립닷컴':'', r.lvUrl?'🏡 리브애니웨어':''].filter(Boolean).join(' · ') || '미연동';
-    return `<div class="room-item" draggable="true" data-idx="${i}">
-      <div class="drag-handle">⠿</div>
-      <div class="room-item-dot" style="background:${r.color}"></div>
-      <div class="room-item-info">
-        <div class="room-item-name">${r.name} ${linked ? '<span class="status-pill">연동됨</span>' : ''}</div>
-        <div class="room-item-url">${urlLabel}</div>
-      </div>
-      <button class="room-edit-btn" data-edit="${i}" title="수정">✎</button>
-      <button class="room-del" data-idx="${i}">✕</button>
-    </div>`;
-  }
+  const abRate = effectiveRate(abFee, abPrmo);
+  const bkRate = effectiveRate(bkComm, bkPrmo);
+  const trRate = effectiveRate(trComm, trPrmo);
+  const lvRate = effectiveRate(lvComm, lvPrmo);
 
-  list.innerHTML = `<div class="reorder-hint">⠿ 핸들을 드래그해서 순서 변경</div>` +
-    rooms.map((r,i) => roomItemHtml(r,i)).join('');
+  const abMeta = `수수료 ${abFee}%${abPrmo>0?' · 프로모 '+abPrmo+'%':''} → 실효 ${(abRate*100).toFixed(1)}%`;
+  const bkMeta = `커미션 ${bkComm}%${bkPrmo>0?' · 프로모 '+bkPrmo+'%':''} → 실효 ${(bkRate*100).toFixed(1)}%`;
+  const trMeta = `커미션 ${trComm}%${trPrmo>0?' · 프로모 '+trPrmo+'%':''} → 실효 ${(trRate*100).toFixed(1)}%`;
+  const lvMeta = `수수료 ${lvComm}%${lvPrmo>0?' · 프로모 '+lvPrmo+'%':''} → 실효 ${(lvRate*100).toFixed(1)}%`;
 
-  list.querySelectorAll('.room-edit-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const idx = +btn.dataset.edit;
-      const r = rooms[idx];
-      const existing = list.querySelector('.room-edit-form');
-      if (existing) existing.remove();
-      const form = document.createElement('div');
-      form.className = 'room-edit-form';
-      form.innerHTML = `
-        <input class="ical-input" id="editName_${idx}" value="${r.name}" placeholder="호실명" maxlength="20">
-        <input class="ical-input" id="editUrl_${idx}" value="${r.url||''}" placeholder="✈ Airbnb iCal URL" autocomplete="off">
-        <input class="ical-input" id="editBkUrl_${idx}" value="${r.bkUrl||''}" placeholder="🏨 Booking.com iCal URL" autocomplete="off">
-        <input class="ical-input" id="editTrUrl_${idx}" value="${r.trUrl||''}" placeholder="🌐 Trip.com iCal URL" autocomplete="off">
-        <input class="ical-input" id="editLvUrl_${idx}" value="${r.lvUrl||''}" placeholder="🏡 리브애니웨어 iCal URL" autocomplete="off">
-        <div class="room-edit-actions">
-          <button class="room-edit-save" data-save="${idx}">저장</button>
-          <button class="room-edit-cancel">취소</button>
-        </div>`;
-      const roomItem = btn.closest('.room-item');
-      roomItem.after(form);
-      form.querySelector(`#editName_${idx}`).focus();
+  document.getElementById('result_wrap').innerHTML =
+    card('ab', 'Airbnb 순수익', abMeta, abHeader() + '<tbody>' + abRows + '</tbody>') +
+    card('bk', 'Booking.com — 역산 등록가', bkMeta, revHeader() + '<tbody>' + bkRows + '</tbody>') +
+    card('tr', 'Trip.com — 역산 등록가', trMeta, revHeader() + '<tbody>' + trRows + '</tbody>') +
+    card('lv', '리브애니웨어 — 역산 등록가', lvMeta, revHeader() + '<tbody>' + lvRows + '</tbody>');
 
-      form.querySelector('.room-edit-cancel').onclick = () => form.remove();
-      form.querySelector('.room-edit-save').onclick = () => {
-        const newName  = document.getElementById(`editName_${idx}`).value.trim();
-        const newUrl   = document.getElementById(`editUrl_${idx}`).value.trim();
-        const newBkUrl = document.getElementById(`editBkUrl_${idx}`).value.trim();
-        const newTrUrl = document.getElementById(`editTrUrl_${idx}`).value.trim();
-        const newLvUrl = document.getElementById(`editLvUrl_${idx}`).value.trim();
-        if (!newName) { document.getElementById(`editName_${idx}`).focus(); return; }
-        rooms[idx].name  = newName;
-        rooms[idx].url   = newUrl;
-        rooms[idx].bkUrl = newBkUrl;
-        rooms[idx].trUrl = newTrUrl;
-        rooms[idx].lvUrl = newLvUrl;
-        saveRooms();
-        form.remove();
-        renderRoomList();
-        render();
-        Promise.all([fetchIcal(rooms[idx]), fetchBkIcal(rooms[idx]), fetchTrIcal(rooms[idx]), fetchLvIcal(rooms[idx])]).then(([ab, bk, tr, lv]) => {
-          rooms[idx].bookings   = ab;
-          rooms[idx].bkBookings = bk;
-          rooms[idx].trBookings = tr;
-          rooms[idx].lvBookings = lv;
-          render();
-        });
-      };
-    });
-  });
-
-  const items = list.querySelectorAll('.room-item[draggable]');
-
-  items.forEach(item => {
-    item.addEventListener('dragstart', e => {
-      dragSrcIdx = +item.dataset.idx;
-      setTimeout(() => item.classList.add('dragging'), 0);
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    item.addEventListener('dragend', () => {
-      item.classList.remove('dragging');
-      list.querySelectorAll('.room-item').forEach(el => el.classList.remove('drag-over'));
-    });
-    item.addEventListener('dragover', e => {
-      e.preventDefault();
-      list.querySelectorAll('.room-item').forEach(el => el.classList.remove('drag-over'));
-      item.classList.add('drag-over');
-    });
-    item.addEventListener('drop', e => {
-      e.preventDefault();
-      const targetIdx = +item.dataset.idx;
-      if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
-      const moved = rooms.splice(dragSrcIdx, 1)[0];
-      rooms.splice(targetIdx, 0, moved);
-      dragSrcIdx = null;
-      saveRooms(); render(); renderRoomList();
-    });
-  });
-
-  let touchSrcIdx = null;
-  items.forEach(item => {
-    item.addEventListener('touchstart', e => {
-      touchSrcIdx = +item.dataset.idx;
-      item.classList.add('dragging');
-    }, {passive:true});
-    item.addEventListener('touchmove', e => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      const target = el && el.closest('.room-item[draggable]');
-      list.querySelectorAll('.room-item').forEach(x => x.classList.remove('drag-over'));
-      if (target && target !== item) target.classList.add('drag-over');
-    }, {passive:false});
-    item.addEventListener('touchend', e => {
-      item.classList.remove('dragging');
-      const touch = e.changedTouches[0];
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      const target = el && el.closest('.room-item[draggable]');
-      if (target && touchSrcIdx !== null) {
-        const targetIdx = +target.dataset.idx;
-        if (touchSrcIdx !== targetIdx) {
-          const moved = rooms.splice(touchSrcIdx, 1)[0];
-          rooms.splice(targetIdx, 0, moved);
-          saveRooms(); render(); renderRoomList();
-        }
-      }
-      touchSrcIdx = null;
-      list.querySelectorAll('.room-item').forEach(x => x.classList.remove('drag-over'));
-    });
-  });
-
-  list.querySelectorAll('.room-del').forEach(btn => {
-    btn.addEventListener('click', e => {
-      const idx = +e.currentTarget.dataset.idx;
-      rooms.splice(idx, 1);
-      saveRooms(); render(); renderRoomList();
-    });
-  });
+  document.getElementById('footnote_area').innerHTML =
+    `역산 등록가 = 청소비 동일 조건에서 Airbnb 순수익과 같아지는 각 플랫폼 등록가<br>
+     실효율 = 프로모 손실 + (1−프로모) × 수수료율`;
 }
 
-function renderMulti() {
-  if (!rooms.length) {
-    return `<div class="empty-state"><div class="big">🏠</div><strong>호실이 없어요</strong><br>오른쪽 상단 ☰ 를 눌러 추가하세요.</div>`;
-  }
-  let html = '';
-  for (let i = 0; i < MONTHS_TO_SHOW; i++) {
-    let y = curY, m = curM + i;
-    while (m > 11) { m -= 12; y++; }
-    html += renderMonthBlock(y, m);
-  }
-  return html;
-}
-
-function render() {
-  const isMulti = viewMode === 'multi';
-  document.getElementById('monthDisplay').textContent = `${curY}. ${String(curM+1).padStart(2,'0')}`;
-  document.getElementById('prevBtn').style.visibility = isMulti ? 'hidden' : 'visible';
-  document.getElementById('nextBtn').style.visibility = isMulti ? 'hidden' : 'visible';
-  if (viewMode==='month') document.getElementById('calendarArea').innerHTML = renderMonth();
-  else if (viewMode==='week') document.getElementById('calendarArea').innerHTML = renderWeek();
-  else document.getElementById('calendarArea').innerHTML = renderMulti();
-  updateTodayBanner();
-  const t = today();
-  document.getElementById('syncTime').textContent = `${t.y}.${String(t.m+1).padStart(2,'0')}.${String(t.d).padStart(2,'0')} ${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')} 기준`;
-  attachCellClicks();
-  scrollToToday();
-}
-
-function scrollToToday() {
-  requestAnimationFrame(() => {
-    const todayCell = document.querySelector('.today-ring');
-    if (todayCell) {
-      const scrollEl = todayCell.closest('.cal-scroll');
-      if (scrollEl) {
-        const cellRect = todayCell.getBoundingClientRect();
-        const scrollRect = scrollEl.getBoundingClientRect();
-        const offset = cellRect.left - scrollRect.left - scrollRect.width * 0.25;
-        scrollEl.scrollBy({ left: offset, behavior: 'smooth' });
-      }
-    }
-    if (viewMode === 'week') {
-      const todayHd = document.querySelector('.today-hd');
-      if (todayHd) {
-        const block = todayHd.closest('.week-block');
-        if (block) block.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  });
-}
-
-function bkKey(roomName, bk) {
-  return `${roomName}|${bk.cinY}${String(bk.cinM+1).padStart(2,'0')}${String(bk.cinD).padStart(2,'0')}`;
-}
-
-function findBookingIn(bookings, y, m, d) {
-  const cur = new Date(y, m, d);
-  for (const bk of bookings) {
-    const cin  = new Date(bk.cinY, bk.cinM, bk.cinD);
-    const cout = new Date(bk.coutY, bk.coutM, bk.coutD);
-    if (cur >= cin && cur <= cout) return bk;
-  }
-  return null;
-}
-
-function findAllBookingsIn(bookings, y, m, d) {
-  const cur = new Date(y, m, d);
-  return bookings.filter(bk => {
-    const cin  = new Date(bk.cinY, bk.cinM, bk.cinD);
-    const cout = new Date(bk.coutY, bk.coutM, bk.coutD);
-    return cur >= cin && cur <= cout;
-  });
-}
-
-function findBooking(room, y, m, d) {
-  return findBookingIn(room.bookings || [], y, m, d);
-}
-
-function findAllBookings(room, y, m, d) {
-  return findAllBookingsIn(room.bookings || [], y, m, d);
-}
-
-function nowStr() {
-  const n = new Date();
-  return `${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
-}
-
-function dateStr(y,m,d) {
-  return `${y}.${String(m+1).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
-}
-
-function getExtra(key) {
-  try { return JSON.parse(localStorage.getItem('hana_ex_'+key) || 'null') || {passwords:[],memos:[]}; } catch(e) { return {passwords:[],memos:[]}; }
-}
-function setExtra(key, data) {
-  try { localStorage.setItem('hana_ex_'+key, JSON.stringify(data)); } catch(e) {}
-  fetch(`${PROXY_URL}/extra`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({key, data})
-  }).catch(()=>{});
-}
-async function loadExtra(key) {
-  try {
-    const resp = await fetch(`${PROXY_URL}/extra?key=${encodeURIComponent(key)}`);
-    if (resp.ok) {
-      const data = await resp.json();
-      try { localStorage.setItem('hana_ex_'+key, JSON.stringify(data)); } catch(e) {}
-      return data;
-    }
-  } catch(e) {}
-  return getExtra(key);
-}
-
-let detailKeys = [];
-let detailKey = null;
-
-function attachCellClicks() {
-  document.querySelectorAll('.day-cell').forEach(cell => {
-    cell.addEventListener('click', e => {
-      e.stopPropagation();
-      const ri = cell.dataset.ri;
-      if (ri === undefined) return;
-      const y = +cell.dataset.y, m = +cell.dataset.m, d = +cell.dataset.d;
-      openDetail(+ri, y, m, d);
-    });
-  });
-}
-
-async function openDetail(ri, y, m, d) {
-  const r = rooms[ri];
-
-  const abBks = findAllBookings(r, y, m, d);
-  const bkBks = findAllBookingsIn(r.bkBookings || [], y, m, d);
-  const trBks = findAllBookingsIn(r.trBookings || [], y, m, d);
-  const lvBks = findAllBookingsIn(r.lvBookings || [], y, m, d);
-
-  document.getElementById('detailTitle').innerHTML =
-    `<span class="room-badge">${r.name}</span>${dateStr(y,m,d)}`;
-
-  const bkBoxEl = document.getElementById('detailBkInfo');
-  let bkInfoHtml = '';
-  function bkInfoBlock(b, platform, selY, selM, selD) {
-    const nights = Math.round((new Date(b.coutY,b.coutM,b.coutD) - new Date(b.cinY,b.cinM,b.cinD)) / 86400000);
-    const isOut = b.coutY===selY && b.coutM===selM && b.coutD===selD;
-    const isIn  = b.cinY===selY  && b.cinM===selM  && b.cinD===selD;
-    const roleBg   = isOut ? 'rgba(240,179,91,0.12)' : isIn ? 'rgba(110,207,143,0.12)' : 'transparent';
-    const roleBorder = isOut ? 'rgba(240,179,91,0.4)' : isIn ? 'rgba(110,207,143,0.4)' : (platform==='booking' ? 'rgba(91,154,216,0.3)' : platform==='trip' ? 'rgba(224,122,95,0.3)' : platform==='lv' ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.1)');
-    const platformBadge = platform === 'airbnb'
-      ? `<span style="color:var(--text3);font-size:10px;">✈ Airbnb</span>`
-      : platform === 'booking'
-      ? `<span style="color:var(--text3);font-size:10px;">🏨 Booking</span>`
-      : platform === 'trip'
-      ? `<span style="color:var(--text3);font-size:10px;">🌐 Trip.com</span>`
-      : `<span style="color:var(--text3);font-size:10px;">🏡 리브애니웨어</span>`;
-    const roleTag = isOut
-      ? `<span style="font-size:13px;font-weight:700;color:var(--out);letter-spacing:0.02em;">체크아웃</span>`
-      : isIn
-      ? `<span style="font-size:13px;font-weight:700;color:var(--in);letter-spacing:0.02em;">체크인</span>`
-      : `<span style="font-size:13px;font-weight:500;color:var(--text2);">숙박중</span>`;
-    const cinShort  = `${String(b.cinM+1).padStart(2,'0')}.${String(b.cinD).padStart(2,'0')}`;
-    const coutShort = `${String(b.coutM+1).padStart(2,'0')}.${String(b.coutD).padStart(2,'0')}`;
-    return `<div class="bk-info-box" style="background:${roleBg};border-color:${roleBorder};${platform==='booking'?'margin-top:8px;':''}">
-      <div class="bk-info-row" style="margin-bottom:2px;">
-        ${roleTag}
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);">${nights}박</span>
-          ${platformBadge}
-        </div>
-      </div>
-      <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);margin-top:4px;">
-        <span style="color:var(--in);">▶ ${cinShort}</span>
-        <span style="margin:0 6px;color:var(--text3);">→</span>
-        <span style="color:var(--out);">${coutShort} ▶</span>
-      </div>
-    </div>`;
-  }
-  abBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'airbnb', y, m, d));
-  bkBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'booking', y, m, d));
-  trBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'trip', y, m, d));
-  lvBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'lv', y, m, d));
-  if (!abBks.length && !bkBks.length && !trBks.length && !lvBks.length) bkInfoHtml = `<div class="no-bk">이 날짜에 예약 없음</div>`;
-  bkBoxEl.innerHTML = bkInfoHtml;
-
-  detailKeys = [];
-  abBks.forEach((b) => {
-    const key = bkKey(r.name, b);
-    const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
-    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'airbnb'});
-  });
-  bkBks.forEach((b) => {
-    const key = bkKey(r.name, b) + '_bk';
-    const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
-    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'booking'});
-  });
-  trBks.forEach((b) => {
-    const key = bkKey(r.name, b) + '_tr';
-    const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
-    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'trip'});
-  });
-  lvBks.forEach((b) => {
-    const key = bkKey(r.name, b) + '_lv';
-    const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
-    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
-    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'lv'});
-  });
-  if (!detailKeys.length) {
-    const fallback = `${r.name}|${y}${String(m+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
-    detailKeys.push({key: fallback, role: null, platform:'none'});
-  }
-
-  detailKey = detailKeys[0].key;
-
-  document.getElementById('detailPanel').classList.add('open');
-
-  await Promise.all(detailKeys.map(({key}) => loadExtra(key)));
-  renderPwUI();
-  renderMemoUI();
-}
-
-function renderPwUI() {
-  const body = document.getElementById('pwSectionBody');
-
-  function pwBox(ki, role) {
-    const {key, platform} = detailKeys[ki];
-    const extra = getExtra(key);
-    const pws = extra.passwords || [];
-    const hasPw = pws.length && pws[0].pw;
-    const borderColor = role === 'out' ? 'rgba(240,179,91,0.4)' : role === 'in' ? 'rgba(110,207,143,0.4)' : 'rgba(200,240,124,0.25)';
-    const labelColor  = role === 'out' ? 'var(--out)' : role === 'in' ? 'var(--in)' : 'var(--text2)';
-    const labelText   = role === 'out' ? '아웃' : role === 'in' ? '인' : '';
-    const pwColor     = role === 'out' ? 'var(--out)' : role === 'in' ? 'var(--in)' : 'var(--accent)';
-    return `<div class="pw-single-box" data-ki="${ki}" style="flex:1;background:var(--bg);border:1px solid ${borderColor};border-radius:var(--r);padding:10px 12px;">
-      <div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:6px;">${labelText}${platform==='booking'?' 🏨':''}</div>
-      <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:${hasPw?pwColor:'var(--text3)'};letter-spacing:0.15em;min-height:28px;line-height:1.2;">${hasPw ? pws[0].pw : '—'}</div>
-      <div style="display:flex;gap:5px;margin-top:8px;">
-        ${hasPw ? `<button class="pw-edit-btn pw-del-btn" data-ki="${ki}" style="flex:1;font-size:11px;color:#e06060;border-color:rgba(224,96,96,0.3);">삭제</button>` : ''}
-        <button class="pw-edit-btn pw-toggle-btn" data-ki="${ki}" id="pwEditBtn-${ki}" style="flex:1;font-size:11px;">수정</button>
-      </div>
-      <div class="pw-edit-row" id="pwEditRow-${ki}" style="display:none;margin-top:8px;gap:6px;">
-        <input class="pw-input" id="pwInput-${ki}" placeholder="번호 입력" maxlength="20" inputmode="numeric" style="font-size:15px;padding:8px 10px;">
-        <button class="pw-save-btn pw-save-btn-dyn" data-ki="${ki}" style="padding:8px 12px;font-size:12px;">저장</button>
-      </div>
-      ${pws.length > 1 ? `<div class="pw-history-title" style="margin-top:8px;">이전</div>${pws.slice(1).map((p,i)=>`<div class="pw-history-item" style="padding:5px 8px;">
-        <span class="pw-history-pw" style="font-size:12px;">${p.pw}</span>
-        <div style="display:flex;align-items:center;gap:6px;"><span class="pw-history-meta" style="font-size:9px;">${p.date}</span><button class="memo-del pw-hist-del" data-ki="${ki}" data-idx="${i+1}">✕</button></div>
-      </div>`).join('')}` : ''}
-    </div>`;
-  }
-
-  const hasOut = detailKeys.some(k => k.role === 'out');
-  const hasIn  = detailKeys.some(k => k.role === 'in');
-  const nullKeys = detailKeys.filter(k => k.role === null && detailKeys.length > 1);
-
-  let html = '';
-  if (hasOut || hasIn) {
-    html += `<div style="display:flex;gap:8px;align-items:flex-start;">`;
-    detailKeys.forEach(({key, role}, ki) => {
-      if (role === 'out' || role === 'in') html += pwBox(ki, role);
-    });
-    html += `</div>`;
-    nullKeys.forEach(({key, role}, i) => {
-      const ki = detailKeys.findIndex(k => k.key === key);
-      html += `<div style="margin-top:8px;">${pwBox(ki, null)}</div>`;
-    });
-  } else {
-    detailKeys.forEach(({key, role}, ki) => { html += pwBox(ki, role); });
-  }
-
-  body.innerHTML = html;
-
-  body.querySelectorAll('.pw-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const row = document.getElementById(`pwEditRow-${ki}`);
-      const isOpen = row.style.display !== 'none';
-      row.style.display = isOpen ? 'none' : 'flex';
-      btn.textContent = isOpen ? '수정' : '취소';
-      if (!isOpen) { document.getElementById(`pwInput-${ki}`).focus(); }
-    });
-  });
-
-  body.querySelectorAll('.pw-del-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const key = detailKeys[ki].key;
-      const extra = getExtra(key);
-      extra.passwords.shift();
-      setExtra(key, extra);
-      renderPwUI();
-    });
-  });
-
-  body.querySelectorAll('.pw-save-btn-dyn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const key = detailKeys[ki].key;
-      const pw = document.getElementById(`pwInput-${ki}`).value.trim();
-      if (!pw) return;
-      const extra = getExtra(key);
-      if (!extra.passwords) extra.passwords = [];
-      if (extra.passwords.length && extra.passwords[0].pw === pw) {
-        document.getElementById(`pwEditRow-${ki}`).style.display = 'none';
-        document.getElementById(`pwEditBtn-${ki}`).textContent = '수정';
-        return;
-      }
-      extra.passwords.unshift({pw, date: nowStr()});
-      if (extra.passwords.length > 15) extra.passwords.pop();
-      setExtra(key, extra);
-      renderPwUI();
-    });
-  });
-
-  body.querySelectorAll('.pw-hist-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const key = detailKeys[ki].key;
-      const extra = getExtra(key);
-      extra.passwords.splice(+btn.dataset.idx, 1);
-      setExtra(key, extra);
-      renderPwUI();
-    });
-  });
-
-  body.querySelectorAll('.pw-input').forEach(inp => {
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const ki = +inp.id.replace('pwInput-', '');
-        body.querySelector(`.pw-save-btn-dyn[data-ki="${ki}"]`).click();
-      }
-    });
-  });
-}
-
-function renderMemoUI() {
-  const list = document.getElementById('memoList');
-  document.querySelector('.memo-input-row').style.display = 'none';
-
-  const hasOut = detailKeys.some(k => k.role === 'out');
-  const hasIn  = detailKeys.some(k => k.role === 'in');
-  const showSplit = hasOut && hasIn;
-
-  function memoSection(ki) {
-    const {key, role, platform} = detailKeys[ki];
-    const extra = getExtra(key);
-    const memos = extra.memos || [];
-    const labelColor = role === 'out' ? 'var(--out)' : role === 'in' ? 'var(--in)' : 'var(--text2)';
-    const labelText  = role === 'out' ? '아웃' : role === 'in' ? '인' : '';
-    const borderColor = role === 'out' ? 'rgba(240,179,91,0.2)' : role === 'in' ? 'rgba(110,207,143,0.2)' : 'rgba(255,255,255,0.08)';
-
-    let html = `<div class="memo-bk-section" data-ki="${ki}" style="flex:1;min-width:0;">`;
-    if (detailKeys.length > 1 && (role === 'out' || role === 'in')) {
-      html += `<div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:8px;">${labelText}${platform==='booking'?' 🏨':platform==='trip'?' 🌐':platform==='lv'?' 🏡':''}</div>`;
-    }
-    if (memos.length) {
-      html += memos.map((memo, i) => `
-        <div class="memo-item" id="memo-item-${ki}-${i}" style="border-color:${borderColor};">
-          <div class="memo-item-body" id="memo-body-${ki}-${i}">
-            <div class="memo-item-text">${memo.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
-            <div class="memo-item-date">${memo.date}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-            <button class="memo-edit-btn" data-ki="${ki}" data-idx="${i}" title="수정">✎</button>
-            <button class="memo-del" data-ki="${ki}" data-idx="${i}" title="삭제">✕</button>
-          </div>
-        </div>
-      `).join('');
-    }
-    html += `<div class="memo-input-row" style="margin-top:${memos.length?'6px':'0'};gap:6px;">
-      <textarea class="memo-textarea" id="memoInput-${ki}" placeholder="메모..." style="min-height:48px;font-size:12px;padding:8px 10px;"></textarea>
-      <button class="memo-add-btn" data-ki="${ki}" style="padding:8px 10px;font-size:12px;">추가</button>
-    </div>`;
-    html += `</div>`;
-    return html;
-  }
-
-  let html = '';
-  if (showSplit) {
-    html += `<div style="display:flex;gap:10px;align-items:flex-start;">`;
-    detailKeys.forEach(({role}, ki) => {
-      if (role === 'out' || role === 'in') html += memoSection(ki);
-    });
-    html += `</div>`;
-  } else {
-    detailKeys.forEach((_, ki) => { html += memoSection(ki); });
-  }
-  list.innerHTML = html;
-
-  list.querySelectorAll('.memo-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const idx = +btn.dataset.idx;
-      const key = detailKeys[ki].key;
-      const extra = getExtra(key);
-      extra.memos.splice(idx, 1);
-      setExtra(key, extra);
-      renderMemoUI();
-    });
-  });
-
-  list.querySelectorAll('.memo-edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const i = +btn.dataset.idx;
-      const key = detailKeys[ki].key;
-      const extra = getExtra(key);
-      const memo = extra.memos[i];
-      const item = document.getElementById(`memo-item-${ki}-${i}`);
-      if (item.querySelector('.memo-edit-textarea')) return;
-      const body = document.getElementById(`memo-body-${ki}-${i}`);
-      const origText = memo.text;
-      body.innerHTML = `
-        <textarea class="memo-edit-textarea" style="width:100%;min-height:60px;max-height:120px;padding:8px 10px;font-size:13px;background:var(--bg);border:0.5px solid rgba(200,240,124,0.4);border-radius:var(--r);color:var(--text);resize:vertical;font-family:'DM Sans',sans-serif;line-height:1.5;outline:none;"></textarea>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <button class="memo-edit-save" style="flex:1;padding:7px;font-size:12px;font-weight:500;background:var(--accent);color:#0f0f0f;border:none;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;">저장</button>
-          <button class="memo-edit-cancel" style="padding:7px 12px;font-size:12px;background:none;border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">취소</button>
-        </div>
-      `;
-      const textarea = body.querySelector('.memo-edit-textarea');
-      textarea.value = origText;
-      textarea.focus();
-      body.querySelector('.memo-edit-save').addEventListener('click', () => {
-        const newText = textarea.value.trim();
-        if (!newText) return;
-        const extra = getExtra(key);
-        extra.memos[i].text = newText;
-        extra.memos[i].date = nowStr() + ' (수정됨)';
-        setExtra(key, extra);
-        renderMemoUI();
-      });
-      body.querySelector('.memo-edit-cancel').addEventListener('click', () => renderMemoUI());
-    });
-  });
-
-  list.querySelectorAll('.memo-add-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ki = +btn.dataset.ki;
-      const key = detailKeys[ki].key;
-      const textarea = document.getElementById(`memoInput-${ki}`);
-      const text = textarea.value.trim();
-      if (!text) return;
-      const extra = getExtra(key);
-      if (!extra.memos) extra.memos = [];
-      extra.memos.unshift({text, date: nowStr()});
-      setExtra(key, extra);
-      renderMemoUI();
-    });
-  });
-
-  list.querySelectorAll('.memo-textarea').forEach(ta => {
-    ta.addEventListener('keydown', e => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        const ki = +ta.id.replace('memoInput-', '');
-        list.querySelector(`.memo-add-btn[data-ki="${ki}"]`).click();
-      }
-    });
-  });
-}
-
-document.getElementById('closeDetail').onclick = () => document.getElementById('detailPanel').classList.remove('open');
-document.getElementById('detailPanel').addEventListener('click', e => {
-  if (e.target === document.getElementById('detailPanel')) document.getElementById('detailPanel').classList.remove('open');
-});
-
-document.getElementById('prevBtn').onclick = () => { curM--; if(curM<0){curM=11;curY--;} render(); };
-document.getElementById('nextBtn').onclick = () => { curM++; if(curM>11){curM=0;curY++;} render(); };
-document.getElementById('todayBtn').onclick = () => { const t=today(); curY=t.y; curM=t.m; render(); };
-document.getElementById('monthTab').onclick = () => { viewMode='month'; document.getElementById('monthTab').classList.add('active'); document.getElementById('weekTab').classList.remove('active'); document.getElementById('multiTab').classList.remove('active'); render(); };
-document.getElementById('weekTab').onclick = () => { viewMode='week'; document.getElementById('weekTab').classList.add('active'); document.getElementById('monthTab').classList.remove('active'); document.getElementById('multiTab').classList.remove('active'); render(); };
-document.getElementById('multiTab').onclick = () => { viewMode='multi'; document.getElementById('multiTab').classList.add('active'); document.getElementById('monthTab').classList.remove('active'); document.getElementById('weekTab').classList.remove('active'); render(); };
-document.getElementById('settingsBtn').onclick = () => { document.getElementById('settingsPanel').classList.add('open'); renderRoomList(); };
-document.getElementById('closeSettings').onclick = () => document.getElementById('settingsPanel').classList.remove('open');
-document.getElementById('settingsPanel').addEventListener('click', e => { if(e.target===document.getElementById('settingsPanel')) document.getElementById('settingsPanel').classList.remove('open'); });
-
-document.getElementById('addRoomBtn').onclick = () => {
-  const name = document.getElementById('inputName').value.trim();
-  const url = document.getElementById('inputUrl').value.trim();
-  if (!name) { document.getElementById('inputName').focus(); return; }
-  if (rooms.length >= 9) { alert('최대 9개 호실까지 등록 가능해요.'); return; }
-  const colorIdx = rooms.length % COLORS.length;
-  const bkUrl = document.getElementById('inputBkUrl').value.trim();
-  const trUrl = document.getElementById('inputTrUrl').value.trim();
-  const lvUrl = document.getElementById('inputLvUrl').value.trim();
-  rooms.push({ name, url: url||'', bkUrl: bkUrl||'', trUrl: trUrl||'', lvUrl: lvUrl||'', color: COLORS[colorIdx], bookings: [], bkBookings: [], trBookings: [], lvBookings: [] });
-  saveRooms();
-  document.getElementById('inputName').value='';
-  document.getElementById('inputUrl').value='';
-  document.getElementById('inputBkUrl').value='';
-  document.getElementById('inputTrUrl').value='';
-  document.getElementById('inputLvUrl').value='';
-  render(); renderRoomList();
-  syncAll();
-};
-
-document.getElementById('syncBtn').onclick = () => syncAll();
-
-async function init() {
-  const t = today(); curY=t.y; curM=t.m;
-  await loadRooms();
-  if (!rooms.length) {
-    const defaults = ['302호','402호','501호','503호','601호','603호','701호','702호','703호'];
-    defaults.forEach((name,i) => rooms.push({name, url:'', bkUrl:'', trUrl:'', lvUrl:'', color:COLORS[i], bookings:[], bkBookings:[], trBookings:[], lvBookings:[]}));
-    await saveRooms();
-  }
-  render();
-  syncAll();
-}
-init();
+calc();
 </script>
 </body>
 </html>
