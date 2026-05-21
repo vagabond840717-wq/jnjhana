@@ -111,28 +111,29 @@ body {
 /* ── TODAY BANNER ── */
 .today-banner {
   position: sticky; top: var(--header-h, 88px); z-index: 90;
-  margin: 0 0 0 0;
+  margin: 0; background: #ffffff;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   padding: 10px 16px;
-  background: #ffffff;
-  border: none;
-  border-radius: 0;
   display: flex; align-items: center; justify-content: space-between;
+  transition: background 0.15s;
 }
+.today-banner.hover-mode { background: rgba(200,240,124,0.08); }
 .banner-sync-btn {
-  width: 34px; height: 34px; border-radius: 50%;
-  border: 0.5px solid #ddd;
-  background: #f4f4f4; color: #555;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--accent); background: var(--accent); color: #111;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 15px; transition: all 0.15s;
-  flex-shrink: 0; margin-left: 8px;
+  cursor: pointer; font-size: 16px; transition: all 0.15s;
+  flex-shrink: 0;
 }
-.banner-sync-btn:active { background: #e8e8e8; opacity: 0.8; transform: scale(0.92); }
+.banner-sync-btn:active { opacity: 0.8; transform: scale(0.92); }
 .today-date { font-size: 13px; color: #666; }
 .today-date strong { color: #111; font-weight: 600; font-family: 'DM Mono', monospace; }
-.today-counts { display: flex; gap: 12px; }
+.today-counts { display: flex; gap: 16px; }
 .today-count { text-align: right; }
-.today-count .num { font-size: 20px; font-weight: 500; font-family: 'DM Mono', monospace; line-height: 1; }
-.today-count .lbl { font-size: 10px; color: #999; margin-top: 1px; }
+.today-count .num { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; line-height: 1; }
+.today-count .lbl { font-size: 10px; color: #999; margin-top: 2px; }
+.num.out { color: #e5503a; } .num.inc { color: #22a06b; }
 .num.out { color: #e09030; }
 .num.inc { color: #3aaa6a; }
 
@@ -578,7 +579,25 @@ body {
   </div>
 </div>
 
-<div class="today-banner" id="todayBanner"></div>
+<div class="today-banner" id="todayBanner">
+  <div>
+    <div class="today-date" id="bannerLabel" style="margin-bottom:2px;">오늘</div>
+    <div class="today-date"><strong id="bannerDate">—</strong></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="today-counts">
+      <div class="today-count">
+        <div class="num out" id="bannerOut">0</div>
+        <div class="lbl">체크아웃</div>
+      </div>
+      <div class="today-count">
+        <div class="num inc" id="bannerIn">0</div>
+        <div class="lbl">체크인</div>
+      </div>
+    </div>
+    <button class="banner-sync-btn" id="syncBtn" onclick="syncAll()"><span id="syncIcon">↻</span></button>
+  </div>
+</div>
 
 <div class="main">
   <div class="sync-row">
@@ -960,44 +979,46 @@ function renderMonthBlock(y, m) {
   return html + '</tbody></table></div></div>';
 }
 
-function updateTodayBanner() {
-  // 헤더 높이에 맞게 sticky top 동적 설정
+function updateTodayBanner(hy, hm, hd, isHover=false) {
   const hdr = document.querySelector('.app-header');
   if (hdr) document.querySelector('.today-banner').style.top = hdr.offsetHeight + 'px';
   const t = today();
-  let outs=[], ins=[];
-  if (curY===t.y && curM===t.m) {
-    for (const r of rooms) {
-      const ab = cellTypeFor(r.bookings||[], t.d, t.y, t.m);
-      const bk = cellTypeFor(r.bkBookings||[], t.d, t.y, t.m);
-      const tr = cellTypeFor(r.trBookings||[], t.d, t.y, t.m);
-      const lv = cellTypeFor(r.lvBookings||[], t.d, t.y, t.m);
-      if (ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'||lv==='checkout'||lv==='both') outs.push(r.name);
-      if (ab==='checkin' ||ab==='both'||bk==='checkin' ||bk==='both'||tr==='checkin' ||tr==='both'||lv==='checkin' ||lv==='both') ins.push(r.name);
-    }
+  const y = hy !== undefined ? hy : t.y;
+  const m = hm !== undefined ? hm : t.m;
+  const d = hd !== undefined ? hd : t.d;
+  const isToday = (y===t.y && m===t.m && d===t.d);
+  let outCount=0, inCount=0;
+  for (const r of rooms) {
+    const ab = cellTypeFor(r.bookings||[], d, y, m);
+    const bk = cellTypeFor(r.bkBookings||[], d, y, m);
+    const tr = cellTypeFor(r.trBookings||[], d, y, m);
+    const lv = cellTypeFor(r.lvBookings||[], d, y, m);
+    if (ab==='checkout'||ab==='both'||bk==='checkout'||bk==='both'||tr==='checkout'||tr==='both'||lv==='checkout'||lv==='both') outCount++;
+    if (ab==='checkin' ||ab==='both'||bk==='checkin' ||bk==='both'||tr==='checkin' ||tr==='both'||lv==='checkin' ||lv==='both') inCount++;
   }
-  const dname = DAY_KO[new Date(t.y,t.m,t.d).getDay()];
-  document.getElementById('todayBanner').innerHTML = `
-    <div>
-      <div class="today-date" style="margin-bottom:2px;">오늘</div>
-      <div class="today-date"><strong>${t.m+1}월 ${t.d}일 (${dname})</strong></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="today-counts">
-        <div class="today-count">
-          <div class="num out">${outs.length}</div>
-          <div class="lbl">체크아웃</div>
-        </div>
-        <div class="today-count">
-          <div class="num inc">${ins.length}</div>
-          <div class="lbl">체크인</div>
-        </div>
-      </div>
-      <button class="banner-sync-btn" id="syncBtn" onclick="syncAll()">
-        <span id="syncIcon">↻</span>
-      </button>
-    </div>
-  `;
+  const dname = DAY_KO[new Date(y,m,d).getDay()];
+  // innerHTML 대신 요소 직접 업데이트 (syncBtn 이벤트 유지)
+  const elLabel = document.getElementById('bannerLabel');
+  const elDate  = document.getElementById('bannerDate');
+  const elOut   = document.getElementById('bannerOut');
+  const elIn    = document.getElementById('bannerIn');
+  const banner  = document.getElementById('todayBanner');
+  if (!elLabel||!elDate||!elOut||!elIn) return;
+  elLabel.textContent = isToday ? '오늘' : isHover ? '📅 선택일' : '';
+  elDate.textContent  = `${m+1}월 ${d}일 (${dname})`;
+  elOut.textContent   = outCount;
+  elIn.textContent    = inCount;
+  // 배경은 항상 흰색 유지
+}
+
+let _bannerResetTimer = null;
+function hoverBannerClean(y,m,d){
+  clearTimeout(_bannerResetTimer);
+  updateTodayBanner(y,m,d,true);
+}
+function leaveBannerClean(){
+  clearTimeout(_bannerResetTimer);
+  _bannerResetTimer = setTimeout(()=>updateTodayBanner(),600);
 }
 
 function renderMonth() {
@@ -1393,16 +1414,38 @@ function highlightCol(y, m, d) {
 
 let _colResetTimer = null;
 function attachCellClicks() {
+  // 날짜 헤더(th)에도 hover 이벤트
+  document.querySelectorAll('.day-th[data-y]').forEach(th => {
+    th.addEventListener('mouseenter', () => {
+      clearTimeout(_colResetTimer);
+      clearTimeout(_bannerResetTimer);
+      const y = +th.dataset.y, m = +th.dataset.m, d = +th.dataset.d;
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        highlightCol(y, m, d);
+        hoverBannerClean(y, m, d);
+      }
+    });
+    th.addEventListener('mouseleave', () => {
+      clearTimeout(_colResetTimer);
+      _colResetTimer = setTimeout(() => highlightCol(null, null, null), 200);
+      leaveBannerClean();
+    });
+  });
+
   document.querySelectorAll('.day-cell').forEach(cell => {
-    // PC: 마우스 호버 → 열 하이라이트
     cell.addEventListener('mouseenter', () => {
       clearTimeout(_colResetTimer);
+      clearTimeout(_bannerResetTimer);
       const y = +cell.dataset.y, m = +cell.dataset.m, d = +cell.dataset.d;
-      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) highlightCol(y, m, d);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        highlightCol(y, m, d);
+        hoverBannerClean(y, m, d);
+      }
     });
     cell.addEventListener('mouseleave', () => {
       clearTimeout(_colResetTimer);
       _colResetTimer = setTimeout(() => highlightCol(null, null, null), 200);
+      leaveBannerClean();
     });
 
     cell.addEventListener('click', e => {
