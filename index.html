@@ -580,11 +580,11 @@ body {
 </div>
 
 <div class="today-banner" id="todayBanner">
-  <div>
-    <div class="today-date" id="bannerLabel" style="margin-bottom:2px;">오늘</div>
-    <div class="today-date"><strong id="bannerDate">—</strong></div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;">
+  <div style="display:flex;align-items:center;gap:12px;flex:1;">
+    <div>
+      <div class="today-date" id="bannerLabel" style="margin-bottom:2px;">오늘</div>
+      <div class="today-date"><strong id="bannerDate">—</strong></div>
+    </div>
     <div class="today-counts">
       <div class="today-count">
         <div class="num out" id="bannerOut">0</div>
@@ -595,8 +595,8 @@ body {
         <div class="lbl">체크인</div>
       </div>
     </div>
-    <button class="banner-sync-btn" id="syncBtn" onclick="syncAll()"><span id="syncIcon">↻</span></button>
   </div>
+  <button class="banner-sync-btn" id="syncBtn" onclick="syncAll()"><span id="syncIcon">↻</span></button>
 </div>
 
 <div class="main">
