@@ -28,16 +28,16 @@
   --occupied: rgba(255,255,255,0.06);
   --today: #c8f07c;
   /* Booking.com */
-  --bk-out: #5b9ad8;
-  --bk-in: #7eb8f5;
+  --bk-out: #f0b35b;
+  --bk-in: #6ecf8f;
   --bk-occupied: rgba(91,154,216,0.10);
   /* Trip.com */
-  --tr-out: #e07a5f;
-  --tr-in: #f4a261;
+  --tr-out: #f0b35b;
+  --tr-in: #6ecf8f;
   --tr-occupied: rgba(224,122,95,0.10);
   /* 리브애니웨어 */
-  --lv-out: #a78bfa;
-  --lv-in: #c4b5fd;
+  --lv-out: #f0b35b;
+  --lv-in: #6ecf8f;
   --lv-occupied: rgba(167,139,250,0.10);
   --r: 8px;
   --r2: 14px;
@@ -111,20 +111,29 @@ body {
 /* ── TODAY BANNER ── */
 .today-banner {
   margin: 12px 16px 0;
-  background: var(--surface);
-  border: 0.5px solid var(--border2);
+  background: #ffffff;
+  border: none;
   border-radius: var(--r2);
   padding: 12px 14px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.today-date { font-size: 13px; color: var(--text2); }
-.today-date strong { color: var(--accent); font-weight: 500; font-family: 'DM Mono', monospace; }
+.banner-sync-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 0.5px solid #ddd;
+  background: #f4f4f4; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 15px; transition: all 0.15s;
+  flex-shrink: 0; margin-left: 8px;
+}
+.banner-sync-btn:active { background: #e8e8e8; opacity: 0.8; transform: scale(0.92); }
+.today-date { font-size: 13px; color: #666; }
+.today-date strong { color: #111; font-weight: 600; font-family: 'DM Mono', monospace; }
 .today-counts { display: flex; gap: 12px; }
 .today-count { text-align: right; }
 .today-count .num { font-size: 20px; font-weight: 500; font-family: 'DM Mono', monospace; line-height: 1; }
-.today-count .lbl { font-size: 10px; color: var(--text3); margin-top: 1px; }
-.num.out { color: var(--out); }
-.num.inc { color: var(--in); }
+.today-count .lbl { font-size: 10px; color: #999; margin-top: 1px; }
+.num.out { color: #e09030; }
+.num.inc { color: #3aaa6a; }
 
 /* ── MAIN CONTENT ── */
 .main { padding: 12px 16px 100px; }
@@ -181,8 +190,8 @@ body {
 .c-empty {}
 /* Booking.com 셀 스타일 */
 .c-bk-occupied { background: rgba(91,154,216,0.10); }
-.c-bk-checkout { background: rgba(91,154,216,0.28); color: var(--bk-out); }
-.c-bk-checkin  { background: rgba(126,184,245,0.22); color: var(--bk-in); }
+.c-bk-checkout { background: rgba(240,179,91,0.22); color: var(--bk-out); }
+.c-bk-checkin  { background: rgba(110,207,143,0.22); color: var(--bk-in); }
 .c-bk-both {
   background: linear-gradient(90deg, rgba(91,154,216,0.3) 50%, rgba(126,184,245,0.25) 50%);
   color: var(--text2);
@@ -195,16 +204,16 @@ body {
 }
 /* Trip.com 셀 스타일 */
 .c-tr-occupied { background: rgba(224,122,95,0.10); }
-.c-tr-checkout { background: rgba(224,122,95,0.28); color: var(--tr-out); }
-.c-tr-checkin  { background: rgba(244,162,97,0.22); color: var(--tr-in); }
+.c-tr-checkout { background: rgba(240,179,91,0.22); color: var(--tr-out); }
+.c-tr-checkin  { background: rgba(110,207,143,0.22); color: var(--tr-in); }
 .c-tr-both {
   background: linear-gradient(90deg, rgba(224,122,95,0.3) 50%, rgba(244,162,97,0.25) 50%);
   color: var(--text2);
 }
 /* 리브애니웨어 셀 스타일 */
 .c-lv-occupied { background: rgba(167,139,250,0.10); }
-.c-lv-checkout { background: rgba(167,139,250,0.28); color: var(--lv-out); }
-.c-lv-checkin  { background: rgba(196,181,253,0.22); color: var(--lv-in); }
+.c-lv-checkout { background: rgba(240,179,91,0.22); color: var(--lv-out); }
+.c-lv-checkin  { background: rgba(110,207,143,0.22); color: var(--lv-in); }
 .c-lv-both {
   background: linear-gradient(90deg, rgba(167,139,250,0.3) 50%, rgba(196,181,253,0.25) 50%);
   color: var(--text2);
@@ -570,9 +579,6 @@ body {
 <div class="main">
   <div class="sync-row">
     <span class="sync-time" id="syncTime">—</span>
-    <button class="sync-btn" id="syncBtn">
-      <span id="syncIcon">↻</span> 새로고침
-    </button>
   </div>
   <div id="calendarArea"></div>
 </div>
@@ -583,19 +589,19 @@ body {
   <div class="legend-item"><div class="legend-box" style="background:rgba(110,207,143,0.35);border:0.5px solid rgba(110,207,143,0.5);"></div>인</div>
   <div class="legend-item"><div class="legend-box" style="background:rgba(200,240,124,0.07);border:0.5px solid rgba(200,240,124,0.15);"></div>숙박</div>
   <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-item" style="color:var(--bk-out);font-size:10px;font-weight:500;margin-right:2px;">🏨</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(91,154,216,0.3);border:0.5px solid rgba(91,154,216,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(126,184,245,0.25);border:0.5px solid rgba(126,184,245,0.4);"></div>인</div>
+  <div class="legend-item" style="color:#5b9ad8;font-size:10px;font-weight:500;margin-right:2px;">🏨</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(240,179,91,0.35);border:0.5px solid rgba(240,179,91,0.5);"></div>아웃</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(110,207,143,0.35);border:0.5px solid rgba(110,207,143,0.5);"></div>인</div>
   <div class="legend-item"><div class="legend-box" style="background:rgba(91,154,216,0.1);border:0.5px solid rgba(91,154,216,0.2);"></div>숙박</div>
   <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-item" style="color:var(--tr-out);font-size:10px;font-weight:500;margin-right:2px;">🌐</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(224,122,95,0.3);border:0.5px solid rgba(224,122,95,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(244,162,97,0.25);border:0.5px solid rgba(244,162,97,0.4);"></div>인</div>
+  <div class="legend-item" style="color:#e07a5f;font-size:10px;font-weight:500;margin-right:2px;">🌐</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(240,179,91,0.35);border:0.5px solid rgba(240,179,91,0.5);"></div>아웃</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(110,207,143,0.35);border:0.5px solid rgba(110,207,143,0.5);"></div>인</div>
   <div class="legend-item"><div class="legend-box" style="background:rgba(224,122,95,0.1);border:0.5px solid rgba(224,122,95,0.2);"></div>숙박</div>
   <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
-  <div class="legend-item" style="color:var(--lv-out);font-size:10px;font-weight:500;margin-right:2px;">🏡</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.3);border:0.5px solid rgba(167,139,250,0.5);"></div>아웃</div>
-  <div class="legend-item"><div class="legend-box" style="background:rgba(196,181,253,0.25);border:0.5px solid rgba(196,181,253,0.4);"></div>인</div>
+  <div class="legend-item" style="color:#a78bfa;font-size:10px;font-weight:500;margin-right:2px;">🏡</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(240,179,91,0.35);border:0.5px solid rgba(240,179,91,0.5);"></div>아웃</div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(110,207,143,0.35);border:0.5px solid rgba(110,207,143,0.5);"></div>인</div>
   <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.1);border:0.5px solid rgba(167,139,250,0.2);"></div>숙박</div>
   <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
   <div class="legend-today"></div><span style="font-size:11px;color:var(--text3);">오늘</span>
@@ -969,15 +975,20 @@ function updateTodayBanner() {
       <div class="today-date" style="margin-bottom:2px;">오늘</div>
       <div class="today-date"><strong>${t.m+1}월 ${t.d}일 (${dname})</strong></div>
     </div>
-    <div class="today-counts">
-      <div class="today-count">
-        <div class="num out">${outs.length}</div>
-        <div class="lbl">체크아웃</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="today-counts">
+        <div class="today-count">
+          <div class="num out">${outs.length}</div>
+          <div class="lbl">체크아웃</div>
+        </div>
+        <div class="today-count">
+          <div class="num inc">${ins.length}</div>
+          <div class="lbl">체크인</div>
+        </div>
       </div>
-      <div class="today-count">
-        <div class="num inc">${ins.length}</div>
-        <div class="lbl">체크인</div>
-      </div>
+      <button class="banner-sync-btn" id="syncBtn" onclick="syncAll()">
+        <span id="syncIcon">↻</span>
+      </button>
     </div>
   `;
 }
@@ -1747,7 +1758,7 @@ document.getElementById('addRoomBtn').onclick = () => {
   syncAll();
 };
 
-document.getElementById('syncBtn').onclick = () => syncAll();
+// syncBtn은 배너에 통합됨 (onclick 직접 설정)
 
 async function init() {
   const t = today(); curY=t.y; curM=t.m;
