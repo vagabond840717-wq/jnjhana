@@ -1014,6 +1014,7 @@ function updateTodayBanner(hy, hm, hd, isHover=false) {
 }
 
 let _bannerResetTimer = null;
+let _pinnedCol = {y:null, m:null, d:null}; // 마지막 고정 날짜
 function hoverBannerClean(y,m,d){
   clearTimeout(_bannerResetTimer);
   updateTodayBanner(y,m,d,true);
@@ -1322,6 +1323,7 @@ function render() {
 }
 
 function scrollToToday() {
+  _pinnedCol = {y:null, m:null, d:null}; // 오늘로 이동 시 핀 초기화
   requestAnimationFrame(() => {
     const todayCell = document.querySelector('.today-ring');
     if (todayCell) {
@@ -1410,7 +1412,13 @@ let detailKey = null;
 
 function highlightCol(y, m, d) {
   document.querySelectorAll('.col-hover').forEach(el => el.classList.remove('col-hover'));
-  if (y === null) return;
+  if (y === null) {
+    if (_pinnedCol.y !== null) {
+      document.querySelectorAll(`[data-y="${_pinnedCol.y}"][data-m="${_pinnedCol.m}"][data-d="${_pinnedCol.d}"]`).forEach(el => el.classList.add('col-hover'));
+    }
+    return;
+  }
+  _pinnedCol = {y, m, d};
   document.querySelectorAll(`[data-y="${y}"][data-m="${m}"][data-d="${d}"]`).forEach(el => el.classList.add('col-hover'));
 }
 
