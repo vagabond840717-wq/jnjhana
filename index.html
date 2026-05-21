@@ -1414,7 +1414,7 @@ function highlightCol(y, m, d) {
 
 let _colResetTimer = null;
 function attachCellClicks() {
-  // 날짜 헤더(th)에도 hover 이벤트
+  // 날짜 헤더(th) hover (PC)
   document.querySelectorAll('.day-th[data-y]').forEach(th => {
     th.addEventListener('mouseenter', () => {
       clearTimeout(_colResetTimer);
@@ -1433,6 +1433,9 @@ function attachCellClicks() {
   });
 
   document.querySelectorAll('.day-cell').forEach(cell => {
+    let _lpTimer = null, _isLongPress = false;
+
+    // PC: 마우스 호버
     cell.addEventListener('mouseenter', () => {
       clearTimeout(_colResetTimer);
       clearTimeout(_bannerResetTimer);
@@ -1448,8 +1451,34 @@ function attachCellClicks() {
       leaveBannerClean();
     });
 
+    // 모바일: 롱프레스
+    cell.addEventListener('touchstart', e => {
+      _isLongPress = false;
+      const y = +cell.dataset.y, m = +cell.dataset.m, d = +cell.dataset.d;
+      _lpTimer = setTimeout(() => {
+        _isLongPress = true;
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+          highlightCol(y, m, d);
+          hoverBannerClean(y, m, d);
+          if (navigator.vibrate) navigator.vibrate(30);
+        }
+      }, 400);
+    }, {passive: true});
+    cell.addEventListener('touchend', () => {
+      clearTimeout(_lpTimer);
+      if (_isLongPress) {
+        highlightCol(null, null, null);
+        leaveBannerClean();
+      }
+    }, {passive: true});
+    cell.addEventListener('touchmove', () => {
+      clearTimeout(_lpTimer);
+    }, {passive: true});
+
+    // 클릭
     cell.addEventListener('click', e => {
       e.stopPropagation();
+      if (_isLongPress) { _isLongPress = false; return; }
       const ri = cell.dataset.ri;
       if (ri === undefined) return;
       const y = +cell.dataset.y, m = +cell.dataset.m, d = +cell.dataset.d;
