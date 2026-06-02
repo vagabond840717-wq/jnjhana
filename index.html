@@ -699,7 +699,7 @@ body {
 </div>
 
 <script>
-const COLORS = ['#c8f07c','#6ecf8f','#5bc8d8','#7fa8f5','#c07aee','#f07cc8','#f0b35b','#f07070','#a8d88a'];
+const COLORS = ['#e5503a','#1a6fcc','#7c3aed','#d4571e','#22a06b','#f59e0b','#ec4899','#0891b2','#65a30d'];
 const DAY_KO = ['일','월','화','수','목','금','토'];
 const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
@@ -726,21 +726,33 @@ async function saveRooms() {
   } catch(e){}
 }
 
+// 구 색상 팔레트 → 새 색상 팔레트 매핑 (예약 앱 기준으로 통일)
+const OLD_COLORS = ['#c8f07c','#6ecf8f','#5bc8d8','#7fa8f5','#c07aee','#f07cc8','#f0b35b','#f07070','#a8d88a'];
+function migrateColor(color, idx) {
+  const oldIdx = OLD_COLORS.indexOf(color);
+  if (oldIdx !== -1) return COLORS[oldIdx];
+  if (!color) return COLORS[idx % COLORS.length];
+  return color;
+}
+
 async function loadRooms() {
   try {
     const resp = await fetch(`${PROXY_URL}/rooms`);
     if (resp.ok) {
       const data = await resp.json();
       if (data && data.length > 0) {
-        rooms = data.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
-        try { localStorage.setItem('hana_rooms', JSON.stringify(data)); } catch(e){}
+        rooms = data.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:migrateColor(r.color,i), bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
+        // 색 마이그레이션이 있으면 저장
+        const migrated = rooms.map(r=>({name:r.name,url:r.url,bkUrl:r.bkUrl,trUrl:r.trUrl,lvUrl:r.lvUrl,color:r.color}));
+        try { localStorage.setItem('hana_rooms', JSON.stringify(migrated)); } catch(e){}
+        if (data.some((r,i)=>OLD_COLORS.includes(r.color))) saveRooms();
         return;
       }
     }
   } catch(e){}
   try {
     const d = JSON.parse(localStorage.getItem('hana_rooms')||'[]');
-    rooms = d.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:r.color||COLORS[i%COLORS.length], bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
+    rooms = d.map((r,i) => ({ name:r.name, url:r.url, bkUrl:r.bkUrl||'', trUrl:r.trUrl||'', lvUrl:r.lvUrl||'', color:migrateColor(r.color,i), bookings:[], bkBookings:[], trBookings:[], lvBookings:[] }));
   } catch(e){ rooms=[]; }
 }
 
