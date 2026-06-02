@@ -916,6 +916,9 @@ function ioTxt(ct) {
   if (ct==='both')     return '↕';
   return '';
 }
+function bothLbl() {
+  return `<span style="display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 1px;"><span style="font-size:7px;line-height:1;">아웃</span><span style="font-size:7px;line-height:1;">인</span></span>`;
+}
 
 function cellClsAndLbl(room, day, y, m) {
   const ab = cellTypeFor(room.bookings   || [], day, y, m);
@@ -931,21 +934,25 @@ function cellClsAndLbl(room, day, y, m) {
   if (abEmpty && bkEmpty && trEmpty && lvEmpty) return {cls:'c-empty', lbl:''};
 
   if (bkEmpty && trEmpty && lvEmpty) {
+    if (ab === 'both') return {cls:'c-both', lbl: bothLbl()};
     const txt = ioTxt(ab);
     if (!txt) return {cls:'c-occupied', lbl:''};
     return {cls:'c-'+ab, lbl:`<span class="cell-icon">✈</span><span class="cell-txt">${txt}</span>`};
   }
   if (abEmpty && trEmpty && lvEmpty) {
+    if (bk === 'both') return {cls:'c-bk-both', lbl: bothLbl()};
     const txt = ioTxt(bk);
     if (!txt) return {cls:'c-bk-occupied', lbl:''};
     return {cls:'c-bk-'+bk, lbl:`<span class="cell-icon">🏨</span><span class="cell-txt">${txt}</span>`};
   }
   if (abEmpty && bkEmpty && lvEmpty) {
+    if (tr === 'both') return {cls:'c-tr-both', lbl: bothLbl()};
     const txt = ioTxt(tr);
     if (!txt) return {cls:'c-tr-occupied', lbl:''};
     return {cls:'c-tr-'+tr, lbl:`<span class="cell-icon">🌐</span><span class="cell-txt">${txt}</span>`};
   }
   if (abEmpty && bkEmpty && trEmpty) {
+    if (lv === 'both') return {cls:'c-lv-both', lbl: bothLbl()};
     const txt = ioTxt(lv);
     if (!txt) return {cls:'c-lv-occupied', lbl:''};
     return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${txt}</span>`};
