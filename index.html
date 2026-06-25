@@ -222,6 +222,22 @@ body {
   background: rgba(10,110,138,0.30);
   color: var(--text2);
 }
+/* 블락 */
+.c-ab-block    { background: rgba(107,114,128,0.35); color: var(--text2); }
+.c-ab-block-checkin  { background: linear-gradient(90deg, rgba(110,207,143,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
+.c-ab-block-checkout { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(240,179,91,0.22) 50%); color: var(--text2); }
+.c-bl-block    { background: rgba(61,68,82,0.45); color: var(--text3); }
+.c-ab-blk-checkout { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
+.c-ab-blk-checkin  { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(110,207,143,0.22) 50%); color: var(--text2); }
+.c-bk-blk-checkout { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
+.c-bk-blk-checkin  { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(91,154,216,0.22) 50%); color: var(--text2); }
+.c-tr-blk-checkout { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
+.c-tr-blk-checkin  { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(224,122,95,0.22) 50%); color: var(--text2); }
+.c-lv-blk-checkout { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
+.c-lv-blk-checkin  { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(167,139,250,0.22) 50%); color: var(--text2); }
+.c-ab-co-bk-ci { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(91,154,216,0.22) 50%); color: var(--text2); }
+.c-ab-co-tr-ci { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(224,122,95,0.22) 50%); color: var(--text2); }
+.c-ab-co-lv-ci { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(167,139,250,0.22) 50%); color: var(--text2); }
 .today-ring .cell-inner { outline: 1.5px solid var(--accent); outline-offset: -2px; border-radius: 5px; }
 /* 열 하이라이트 - 오늘 테두리와 동일한 스타일 */
 .day-th.col-hover { color: var(--accent) !important; font-weight: 600; }
@@ -629,6 +645,8 @@ body {
   <div class="legend-item"><div class="legend-box" style="background:rgba(110,207,143,0.35);border:0.5px solid rgba(110,207,143,0.5);"></div>인</div>
   <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,0.25);border:0.5px solid rgba(167,139,250,0.4);"></div>숙박</div>
   <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
+  <div class="legend-item"><div class="legend-box" style="background:rgba(107,114,128,0.35);border:0.5px solid rgba(107,114,128,0.5);"></div>블락</div>
+  <div style="width:0.5px;height:12px;background:var(--border2);flex-shrink:0;"></div>
   <div class="legend-today"></div><span style="font-size:11px;color:var(--text3);">오늘</span>
 </div>
 
@@ -758,6 +776,7 @@ async function loadRooms() {
 
 function parseIcal(text) {
   const bookings = [];
+  const abBlocks = [];
   const events = text.split('BEGIN:VEVENT');
   for (let i = 1; i < events.length; i++) {
     const ev = events[i];
@@ -766,16 +785,17 @@ function parseIcal(text) {
     const summary = ev.match(/SUMMARY:(.*)/);
     if (!dtstart || !dtend) continue;
     const title = summary ? summary[1].trim().toLowerCase() : '';
-    if (title === 'not available' || title === 'airbnb (not available)') continue;
-    const parseD = s => {
-      const y=+s.slice(0,4), m=+s.slice(4,6)-1, d=+s.slice(6,8);
-      return {y,m,d};
-    };
+    const parseD = s => { const y=+s.slice(0,4), m=+s.slice(4,6)-1, d=+s.slice(6,8); return {y,m,d}; };
     const s = parseD(dtstart[1]);
     const e = parseD(dtend[1]);
-    bookings.push({ cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d });
+    const bk = { cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d };
+    if (title === 'not available' || title === 'airbnb (not available)') {
+      abBlocks.push(bk);
+    } else {
+      bookings.push(bk);
+    }
   }
-  return bookings;
+  return { bookings, abBlocks };
 }
 
 function parseIcalBooking(text) {
@@ -836,12 +856,12 @@ function parseIcalLv(text) {
 }
 
 async function fetchIcal(room) {
-  if (!room.url || room.url === '') return [];
+  if (!room.url || room.url === '') return { bookings: [], abBlocks: [] };
   try {
     const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.url)}`);
-    if (!resp.ok) return [];
+    if (!resp.ok) return { bookings: [], abBlocks: [] };
     return parseIcal(await resp.text());
-  } catch(e) { return []; }
+  } catch(e) { return { bookings: [], abBlocks: [] }; }
 }
 
 async function fetchBkIcal(room) {
@@ -881,12 +901,31 @@ async function syncAll() {
     Promise.all(rooms.map(r => fetchTrIcal(r))),
     Promise.all(rooms.map(r => fetchLvIcal(r)))
   ]);
-  rooms.forEach((r,i) => { r.bookings = abResults[i]; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; r.lvBookings = lvResults[i]; });
+  rooms.forEach((r,i) => { r.bookings = abResults[i].bookings; r.abBlocks = abResults[i].abBlocks; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; r.lvBookings = lvResults[i]; });
   icon.classList.remove('spin');
   const now = new Date();
   document.getElementById('syncTime').textContent =
     `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 기준`;
   render();
+}
+
+let manualBlocks = [];
+async function loadBlocks() {
+  try {
+    const resp = await fetch(`${PROXY_URL}/extra?key=manual_blocks`);
+    if (resp.ok) { const data = await resp.json(); manualBlocks = Array.isArray(data) ? data : []; return; }
+  } catch(e) {}
+  try { manualBlocks = JSON.parse(localStorage.getItem('hana_blocks') || '[]'); } catch(e) { manualBlocks = []; }
+}
+function blockTypeFor(roomName, y, m, d) {
+  const cur = new Date(y, m, d);
+  for (const bl of manualBlocks) {
+    if (bl.roomName !== roomName) continue;
+    const s = new Date(bl.startY, bl.startM, bl.startD);
+    const e = new Date(bl.endY, bl.endM, bl.endD);
+    if (cur >= s && cur <= e) return 'block';
+  }
+  return 'empty';
 }
 
 function cellTypeFor(bookings, day, y, m) {
@@ -898,6 +937,24 @@ function cellTypeFor(bookings, day, y, m) {
     if (cur.getTime() === cout.getTime()) isOut = true;
     if (cur.getTime() === cin.getTime())  isIn  = true;
     if (cur > cin && cur < cout)          occupied = true;
+  }
+  if (isOut && isIn) return 'both';
+  if (isOut) return 'checkout';
+  if (isIn)  return 'checkin';
+  if (occupied) return 'occupied';
+  return 'empty';
+}
+
+function cellTypeForBlock(bookings, day, y, m) {
+  let occupied=false, isOut=false, isIn=false;
+  const cur = new Date(y, m, day);
+  for (const bk of bookings) {
+    const cin      = new Date(bk.cinY, bk.cinM, bk.cinD);
+    const cout     = new Date(bk.coutY, bk.coutM, bk.coutD);
+    const coutNext = new Date(bk.coutY, bk.coutM, bk.coutD + 1);
+    if (cur.getTime() === coutNext.getTime()) isOut = true;
+    if (cur.getTime() === cin.getTime())      isIn  = true;
+    if (cur >= cin && cur <= cout)            occupied = true;
   }
   if (isOut && isIn) return 'both';
   if (isOut) return 'checkout';
@@ -921,56 +978,75 @@ function bothLbl() {
 }
 
 function cellClsAndLbl(room, day, y, m) {
-  const ab = cellTypeFor(room.bookings   || [], day, y, m);
-  const bk = cellTypeFor(room.bkBookings || [], day, y, m);
-  const tr = cellTypeFor(room.trBookings || [], day, y, m);
-  const lv = cellTypeFor(room.lvBookings || [], day, y, m);
+  const ab    = cellTypeFor(room.bookings   || [], day, y, m);
+  const abBlk = cellTypeForBlock(room.abBlocks || [], day, y, m);
+  const bk    = cellTypeFor(room.bkBookings || [], day, y, m);
+  const tr    = cellTypeFor(room.trBookings || [], day, y, m);
+  const lv    = cellTypeFor(room.lvBookings || [], day, y, m);
+  const bl    = blockTypeFor(room.name, y, m, day);
 
-  const abEmpty = ab === 'empty';
-  const bkEmpty = bk === 'empty';
-  const trEmpty = tr === 'empty';
-  const lvEmpty = lv === 'empty';
+  const abE=ab==='empty', abBlkE=abBlk==='empty', bkE=bk==='empty', trE=tr==='empty', lvE=lv==='empty', blE=bl==='empty';
 
-  if (abEmpty && bkEmpty && trEmpty && lvEmpty) return {cls:'c-empty', lbl:''};
+  if (abE && abBlkE && bkE && trE && lvE && blE) return {cls:'c-empty', lbl:''};
 
-  if (bkEmpty && trEmpty && lvEmpty) {
+  function io(ct) { if(ct==='checkout') return '아웃'; if(ct==='checkin') return '인'; if(ct==='both') return '↕'; return ''; }
+
+  if (!blE && abE && abBlkE && bkE && trE && lvE) return {cls:'c-bl-block', lbl:'<span class="cell-icon">🔒</span>'};
+  if (!abBlkE && abE && bkE && trE && lvE && blE) {
+    if (abBlk === 'checkout') return {cls:'c-checkout', lbl:`<span class="cell-icon">✈</span><span class="cell-txt">아웃</span>`};
+    return {cls:'c-ab-block', lbl:'<span class="cell-icon">🚫</span>'};
+  }
+  if (bkE && trE && lvE && blE && abBlkE) {
+    const t = io(ab);
+    if (!t) return {cls:'c-occupied', lbl:''};
     if (ab === 'both') return {cls:'c-both', lbl: bothLbl()};
-    const txt = ioTxt(ab);
-    if (!txt) return {cls:'c-occupied', lbl:''};
-    return {cls:'c-'+ab, lbl:`<span class="cell-icon">✈</span><span class="cell-txt">${txt}</span>`};
+    return {cls:'c-'+ab, lbl:`<span class="cell-icon">✈</span><span class="cell-txt">${t}</span>`};
   }
-  if (abEmpty && trEmpty && lvEmpty) {
+  if (abE && trE && lvE && blE && abBlkE) {
+    const t = io(bk);
+    if (!t) return {cls:'c-bk-occupied', lbl:''};
     if (bk === 'both') return {cls:'c-bk-both', lbl: bothLbl()};
-    const txt = ioTxt(bk);
-    if (!txt) return {cls:'c-bk-occupied', lbl:''};
-    return {cls:'c-bk-'+bk, lbl:`<span class="cell-icon">🏨</span><span class="cell-txt">${txt}</span>`};
+    return {cls:'c-bk-'+bk, lbl:`<span class="cell-icon">🏨</span><span class="cell-txt">${t}</span>`};
   }
-  if (abEmpty && bkEmpty && lvEmpty) {
+  if (abE && bkE && lvE && blE && abBlkE) {
+    const t = io(tr);
+    if (!t) return {cls:'c-tr-occupied', lbl:''};
     if (tr === 'both') return {cls:'c-tr-both', lbl: bothLbl()};
-    const txt = ioTxt(tr);
-    if (!txt) return {cls:'c-tr-occupied', lbl:''};
-    return {cls:'c-tr-'+tr, lbl:`<span class="cell-icon">🌐</span><span class="cell-txt">${txt}</span>`};
+    return {cls:'c-tr-'+tr, lbl:`<span class="cell-icon">🌐</span><span class="cell-txt">${t}</span>`};
   }
-  if (abEmpty && bkEmpty && trEmpty) {
+  if (abE && bkE && trE && blE && abBlkE) {
+    const t = io(lv);
+    if (!t) return {cls:'c-lv-occupied', lbl:''};
     if (lv === 'both') return {cls:'c-lv-both', lbl: bothLbl()};
-    const txt = ioTxt(lv);
-    if (!txt) return {cls:'c-lv-occupied', lbl:''};
-    return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${txt}</span>`};
+    return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${t}</span>`};
   }
-
+  if (!abBlkE && blE) {
+    if (abBlk === 'checkout') {
+      if (!abE && bkE && trE && lvE && ab === 'checkin') return {cls:'c-both', lbl: bothLbl()};
+      if (abE && !bkE && trE && lvE && bk === 'checkin') return {cls:'c-ab-co-bk-ci', lbl: bothLbl()};
+      if (abE && bkE && !trE && lvE && tr === 'checkin') return {cls:'c-ab-co-tr-ci', lbl: bothLbl()};
+      if (abE && bkE && trE && !lvE && lv === 'checkin') return {cls:'c-ab-co-lv-ci', lbl: bothLbl()};
+    }
+    if (!abE && bkE && trE && lvE && (ab==='checkout'||ab==='checkin')) return {cls:`c-ab-blk-${ab}`, lbl:`<span class="cell-txt">${io(ab)}</span>`};
+    if (abE && !bkE && trE && lvE && (bk==='checkout'||bk==='checkin')) return {cls:`c-bk-blk-${bk}`, lbl:`<span class="cell-txt">${io(bk)}</span>`};
+    if (abE && bkE && !trE && lvE && (tr==='checkout'||tr==='checkin')) return {cls:`c-tr-blk-${tr}`, lbl:`<span class="cell-txt">${io(tr)}</span>`};
+    if (abE && bkE && trE && !lvE && (lv==='checkout'||lv==='checkin')) return {cls:`c-lv-blk-${lv}`, lbl:`<span class="cell-txt">${io(lv)}</span>`};
+  }
   const parts = [];
-  if (!abEmpty) parts.push(ioTxt(ab)
+  if (!abE) parts.push(ioTxt(ab)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#f0b35b;"><span>✈</span><span>${ioTxt(ab)}</span></span>`
     : `<span style="font-size:7px;color:rgba(200,240,124,0.5);">✈</span>`);
-  if (!bkEmpty) parts.push(ioTxt(bk)
+  if (!abBlkE) parts.push(`<span style="font-size:7px;color:#6b7280;">🚫</span>`);
+  if (!bkE) parts.push(ioTxt(bk)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#5b9ad8;"><span>🏨</span><span>${ioTxt(bk)}</span></span>`
     : `<span style="font-size:7px;color:rgba(91,154,216,0.5);">🏨</span>`);
-  if (!trEmpty) parts.push(ioTxt(tr)
+  if (!trE) parts.push(ioTxt(tr)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#e07a5f;"><span>🌐</span><span>${ioTxt(tr)}</span></span>`
     : `<span style="font-size:7px;color:rgba(224,122,95,0.5);">🌐</span>`);
-  if (!lvEmpty) parts.push(ioTxt(lv)
+  if (!lvE) parts.push(ioTxt(lv)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${ioTxt(lv)}</span></span>`
     : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`);
+  if (!blE) parts.push('<span style="font-size:7px;">🔒</span>');
   return {cls:'c-dual', lbl: parts.join('')};
 }
 
@@ -1234,7 +1310,8 @@ function renderRoomList() {
         renderRoomList();
         render();
         Promise.all([fetchIcal(rooms[idx]), fetchBkIcal(rooms[idx]), fetchTrIcal(rooms[idx]), fetchLvIcal(rooms[idx])]).then(([ab, bk, tr, lv]) => {
-          rooms[idx].bookings   = ab;
+          rooms[idx].bookings   = ab.bookings;
+          rooms[idx].abBlocks   = ab.abBlocks;
           rooms[idx].bkBookings = bk;
           rooms[idx].trBookings = tr;
           rooms[idx].lvBookings = lv;
@@ -1899,7 +1976,7 @@ document.getElementById('addRoomBtn').onclick = () => {
 
 async function init() {
   const t = today(); curY=t.y; curM=t.m;
-  await loadRooms();
+  await Promise.all([loadRooms(), loadBlocks()]);
   if (!rooms.length) {
     const defaults = ['302호','402호','501호','503호','601호','603호','701호','702호','703호'];
     defaults.forEach((name,i) => rooms.push({name, url:'', bkUrl:'', trUrl:'', lvUrl:'', color:COLORS[i], bookings:[], bkBookings:[], trBookings:[], lvBookings:[]}));
