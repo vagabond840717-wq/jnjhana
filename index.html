@@ -1012,8 +1012,9 @@ function ioTxt(ct) {
   if (ct==='both')     return '↕';
   return '';
 }
-function bothLbl() {
-  return `<span style="display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 1px;"><span style="font-size:7px;line-height:1;">아웃</span><span style="font-size:7px;line-height:1;">인</span></span>`;
+function bothLbl(icon) {
+  const ic = icon ? `<span style="font-size:8px;line-height:1;">${icon}</span>` : '';
+  return `<span style="display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 1px;"><span style="font-size:7px;line-height:1;">아웃</span>${ic}<span style="font-size:7px;line-height:1;">인</span></span>`;
 }
 
 function cellClsAndLbl(room, day, y, m) {
@@ -1038,25 +1039,25 @@ function cellClsAndLbl(room, day, y, m) {
   if (bkE && trE && lvE && blE && abBlkE) {
     const t = io(ab);
     if (!t) return {cls:'c-occupied', lbl:''};
-    if (ab === 'both') return {cls:'c-both', lbl: bothLbl()};
+    if (ab === 'both') return {cls:'c-both', lbl: bothLbl('✈')};
     return {cls:'c-'+ab, lbl:`<span class="cell-icon">✈</span><span class="cell-txt">${t}</span>`};
   }
   if (abE && trE && lvE && blE && abBlkE) {
     const t = io(bk);
     if (!t) return {cls:'c-bk-occupied', lbl:''};
-    if (bk === 'both') return {cls:'c-bk-both', lbl: bothLbl()};
+    if (bk === 'both') return {cls:'c-bk-both', lbl: bothLbl('🏨')};
     return {cls:'c-bk-'+bk, lbl:`<span class="cell-icon">🏨</span><span class="cell-txt">${t}</span>`};
   }
   if (abE && bkE && lvE && blE && abBlkE) {
     const t = io(tr);
     if (!t) return {cls:'c-tr-occupied', lbl:''};
-    if (tr === 'both') return {cls:'c-tr-both', lbl: bothLbl()};
+    if (tr === 'both') return {cls:'c-tr-both', lbl: bothLbl('🌐')};
     return {cls:'c-tr-'+tr, lbl:`<span class="cell-icon">🌐</span><span class="cell-txt">${t}</span>`};
   }
   if (abE && bkE && trE && blE && abBlkE) {
     const t = io(lv);
     if (!t) return {cls:'c-lv-occupied', lbl:''};
-    if (lv === 'both') return {cls:'c-lv-both', lbl: bothLbl()};
+    if (lv === 'both') return {cls:'c-lv-both', lbl: bothLbl('🏡')};
     return {cls:'c-lv-'+lv, lbl:`<span class="cell-icon">🏡</span><span class="cell-txt">${t}</span>`};
   }
   if (!abBlkE && blE) {
