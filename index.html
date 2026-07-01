@@ -787,9 +787,16 @@ function parseIcal(text) {
     const title = summary ? summary[1].trim().toLowerCase() : '';
     const parseD = s => { const y=+s.slice(0,4), m=+s.slice(4,6)-1, d=+s.slice(6,8); return {y,m,d}; };
     const s = parseD(dtstart[1]);
-    const e = parseD(dtend[1]);
+    let e = parseD(dtend[1]);
+    const isBlock = title === 'not available' || title === 'airbnb (not available)';
+    // 에어비앤비 "Not Available"은 DTEND가 체크아웃 다음날로 옴 → 하루 빼서 실제 체크아웃일로 저장 (worker.js와 동일 보정)
+    if (isBlock) {
+      const coutDate = new Date(e.y, e.m, e.d);
+      coutDate.setDate(coutDate.getDate() - 1);
+      e = { y: coutDate.getFullYear(), m: coutDate.getMonth(), d: coutDate.getDate() };
+    }
     const bk = { cinY:s.y,cinM:s.m,cinD:s.d, coutY:e.y,coutM:e.m,coutD:e.d };
-    if (title === 'not available' || title === 'airbnb (not available)') {
+    if (isBlock) {
       abBlocks.push(bk);
     } else {
       bookings.push(bk);
