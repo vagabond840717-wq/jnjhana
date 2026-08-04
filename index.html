@@ -229,6 +229,8 @@ body {
 .c-ab-block-checkin  { background: linear-gradient(90deg, rgba(110,207,143,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
 .c-ab-block-checkout { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(240,179,91,0.22) 50%); color: var(--text2); }
 .c-bl-block    { background: rgba(61,68,82,0.45); color: var(--text3); }
+/* 체크아웃 + 수동 블락 시작 (예약앱 c-mix-out-bl과 동일 규칙) */
+.c-mix-out-bl  { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(61,68,82,0.45) 50%); color: var(--text2); }
 .c-ab-blk-checkout { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
 .c-ab-blk-checkin  { background: linear-gradient(90deg, rgba(107,114,128,0.35) 50%, rgba(110,207,143,0.22) 50%); color: var(--text2); }
 .c-bk-blk-checkout { background: linear-gradient(90deg, rgba(240,179,91,0.22) 50%, rgba(107,114,128,0.35) 50%); color: var(--text2); }
@@ -971,7 +973,7 @@ function blockTypeFor(roomName, y, m, d) {
     if (bl.roomName !== roomName) continue;
     const s = new Date(bl.startY, bl.startM, bl.startD);
     const e = new Date(bl.endY, bl.endM, bl.endD);
-    if (cur >= s && cur <= e) return 'block';
+    if (cur >= s && cur <= e) return cur.getTime() === s.getTime() ? 'start' : 'block';
   }
   return 'empty';
 }
@@ -1021,9 +1023,15 @@ function ioTxt(ct) {
   if (ct==='both')     return '↕';
   return '';
 }
-function bothLbl(icon) {
-  const ic = icon ? `<span style="font-size:8px;line-height:1;">${icon}</span>` : '';
-  return `<span style="display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 1px;"><span style="font-size:7px;line-height:1;">아웃</span>${ic}<span style="font-size:7px;line-height:1;">인</span></span>`;
+// 아웃/인 반반 셀 공통 레이아웃: [아웃][아이콘][인]. 아웃·인 아이콘이 다르면 2개(아웃쪽 먼저)
+// inTxt: 오른쪽 글자 교체용 (수동 블락이면 '블락')
+function bothLbl(outIcon, inIcon, inTxt) {
+  let ic = '';
+  if (outIcon && inIcon && outIcon !== inIcon)
+    ic = `<span style="font-size:7px;line-height:1;letter-spacing:-1px;">${outIcon}${inIcon}</span>`;
+  else if (outIcon || inIcon)
+    ic = `<span style="font-size:8px;line-height:1;">${outIcon || inIcon}</span>`;
+  return `<span style="display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 1px;"><span style="font-size:7px;line-height:1;">아웃</span>${ic}<span style="font-size:7px;line-height:1;">${inTxt || '인'}</span></span>`;
 }
 
 function cellClsAndLbl(room, day, y, m) {
@@ -1080,6 +1088,19 @@ function cellClsAndLbl(room, day, y, m) {
     if (abE && !bkE && trE && lvE && (bk==='checkout'||bk==='checkin')) return {cls:`c-bk-blk-${bk}`, lbl:`<span class="cell-txt">${io(bk)}</span>`};
     if (abE && bkE && !trE && lvE && (tr==='checkout'||tr==='checkin')) return {cls:`c-tr-blk-${tr}`, lbl:`<span class="cell-txt">${io(tr)}</span>`};
     if (abE && bkE && trE && !lvE && (lv==='checkout'||lv==='checkin')) return {cls:`c-lv-blk-${lv}`, lbl:`<span class="cell-txt">${io(lv)}</span>`};
+  }
+  // 체크아웃 + 수동 블락 시작 → 반반 셀 (예약앱 c-mix-out-bl과 동일 규칙)
+  // 밤은 막혔지만 그날 청소는 나가야 하므로 '아웃' 표시를 유지한다
+  if (bl === 'start' && abBlkE) {
+    const ics = {ab:'✈', bk:'🏨', tr:'🌐', lv:'🏡'};
+    const types = {ab, bk, tr, lv};
+    const outs = [];
+    let other = false;
+    for (const k of ['ab','bk','tr','lv']) {
+      if (types[k] === 'checkout') outs.push(ics[k]);
+      else if (types[k] !== 'empty') other = true;
+    }
+    if (outs.length === 1 && !other) return {cls:'c-mix-out-bl', lbl: bothLbl(outs[0], '🔒', '블락')};
   }
   const parts = [], srcs = [];
   if (!abE) { parts.push(ioTxt(ab)
