@@ -200,12 +200,14 @@ body {
   background: rgba(26,63,122,0.35);
   color: var(--text2);
 }
-/* 에어비앤비+부킹닷컴 같은 날: 상하 분할 */
+/* 여러 소스가 한 날에 겹침: 실제 겹친 플랫폼 색으로 상하 분할 */
 .c-dual {
-  background: linear-gradient(180deg, rgba(240,179,91,0.18) 50%, rgba(91,154,216,0.22) 50%);
+  background: linear-gradient(180deg, var(--d1,rgba(240,179,91,0.18)) 50%, var(--d2,var(--d1,rgba(240,179,91,0.18))) 50%);
   color: var(--text2);
   gap: 0;
 }
+.d1-ab{--d1:rgba(184,92,0,0.25)}.d1-bk{--d1:rgba(26,63,122,0.35)}.d1-tr{--d1:rgba(74,18,120,0.35)}.d1-lv{--d1:rgba(10,110,138,0.30)}.d1-blk{--d1:rgba(107,114,128,0.35)}.d1-bl{--d1:rgba(61,68,82,0.45)}
+.d2-ab{--d2:rgba(184,92,0,0.25)}.d2-bk{--d2:rgba(26,63,122,0.35)}.d2-tr{--d2:rgba(74,18,120,0.35)}.d2-lv{--d2:rgba(10,110,138,0.30)}.d2-blk{--d2:rgba(107,114,128,0.35)}.d2-bl{--d2:rgba(61,68,82,0.45)}
 /* Trip.com 셀 스타일 */
 .c-tr-occupied { background: rgba(74,18,120,0.35); }
 .c-tr-checkout { background: rgba(240,179,91,0.22); color: var(--tr-out); }
@@ -1079,22 +1081,24 @@ function cellClsAndLbl(room, day, y, m) {
     if (abE && bkE && !trE && lvE && (tr==='checkout'||tr==='checkin')) return {cls:`c-tr-blk-${tr}`, lbl:`<span class="cell-txt">${io(tr)}</span>`};
     if (abE && bkE && trE && !lvE && (lv==='checkout'||lv==='checkin')) return {cls:`c-lv-blk-${lv}`, lbl:`<span class="cell-txt">${io(lv)}</span>`};
   }
-  const parts = [];
-  if (!abE) parts.push(ioTxt(ab)
+  const parts = [], srcs = [];
+  if (!abE) { parts.push(ioTxt(ab)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#f0b35b;"><span>✈</span><span>${ioTxt(ab)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(200,240,124,0.5);">✈</span>`);
-  if (!abBlkE) parts.push(`<span style="font-size:7px;color:#6b7280;">🚫</span>`);
-  if (!bkE) parts.push(ioTxt(bk)
+    : `<span style="font-size:7px;color:rgba(200,240,124,0.5);">✈</span>`); srcs.push('ab'); }
+  if (!abBlkE) { parts.push(`<span style="font-size:7px;color:#6b7280;">🚫</span>`); srcs.push('blk'); }
+  if (!bkE) { parts.push(ioTxt(bk)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#5b9ad8;"><span>🏨</span><span>${ioTxt(bk)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(91,154,216,0.5);">🏨</span>`);
-  if (!trE) parts.push(ioTxt(tr)
+    : `<span style="font-size:7px;color:rgba(91,154,216,0.5);">🏨</span>`); srcs.push('bk'); }
+  if (!trE) { parts.push(ioTxt(tr)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#e07a5f;"><span>🌐</span><span>${ioTxt(tr)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(224,122,95,0.5);">🌐</span>`);
-  if (!lvE) parts.push(ioTxt(lv)
+    : `<span style="font-size:7px;color:rgba(224,122,95,0.5);">🌐</span>`); srcs.push('tr'); }
+  if (!lvE) { parts.push(ioTxt(lv)
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${ioTxt(lv)}</span></span>`
-    : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`);
-  if (!blE) parts.push('<span style="font-size:7px;">🔒</span>');
-  return {cls:'c-dual', lbl: parts.join('')};
+    : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`); srcs.push('lv'); }
+  if (!blE) { parts.push('<span style="font-size:7px;">🔒</span>'); srcs.push('bl'); }
+  // 배경은 실제로 겹친 소스 색으로 (하나면 단색, 둘 이상이면 위/아래 반반)
+  const dualCls = 'c-dual' + (srcs[0] ? ' d1-'+srcs[0] : '') + (srcs[1] ? ' d2-'+srcs[1] : '');
+  return {cls:dualCls, lbl: parts.join('')};
 }
 
 function renderMonthBlock(y, m) {
