@@ -201,11 +201,14 @@ body {
   color: var(--text2);
 }
 /* 여러 소스가 한 날에 겹침: 실제 겹친 플랫폼 색으로 상하 분할 */
+/* 다른 반반 셀(아웃|인)과 같은 좌우 분할 — 왼쪽=첫 소스, 오른쪽=둘째 소스 */
 .c-dual {
-  background: linear-gradient(180deg, var(--d1,rgba(240,179,91,0.18)) 50%, var(--d2,var(--d1,rgba(240,179,91,0.18))) 50%);
+  background: linear-gradient(90deg, var(--d1,rgba(240,179,91,0.18)) 50%, var(--d2,var(--d1,rgba(240,179,91,0.18))) 50%);
   color: var(--text2);
-  gap: 0;
+  flex-direction: row; justify-content: space-between; align-items: center;
+  padding: 0 1px; gap: 0;
 }
+.c-dual.dual-solo { justify-content: center; }
 .d1-ab{--d1:rgba(184,92,0,0.25)}.d1-bk{--d1:rgba(26,63,122,0.35)}.d1-tr{--d1:rgba(74,18,120,0.35)}.d1-lv{--d1:rgba(10,110,138,0.30)}.d1-blk{--d1:rgba(107,114,128,0.35)}.d1-bl{--d1:rgba(61,68,82,0.45)}
 .d2-ab{--d2:rgba(184,92,0,0.25)}.d2-bk{--d2:rgba(26,63,122,0.35)}.d2-tr{--d2:rgba(74,18,120,0.35)}.d2-lv{--d2:rgba(10,110,138,0.30)}.d2-blk{--d2:rgba(107,114,128,0.35)}.d2-bl{--d2:rgba(61,68,82,0.45)}
 /* Trip.com 셀 스타일 */
@@ -1117,8 +1120,8 @@ function cellClsAndLbl(room, day, y, m) {
     ? `<span style="display:flex;align-items:center;gap:1px;font-size:7px;color:#a78bfa;"><span>🏡</span><span>${ioTxt(lv)}</span></span>`
     : `<span style="font-size:7px;color:rgba(167,139,250,0.5);">🏡</span>`); srcs.push('lv'); }
   if (!blE) { parts.push('<span style="font-size:7px;">🔒</span>'); srcs.push('bl'); }
-  // 배경은 실제로 겹친 소스 색으로 (하나면 단색, 둘 이상이면 위/아래 반반)
-  const dualCls = 'c-dual' + (srcs[0] ? ' d1-'+srcs[0] : '') + (srcs[1] ? ' d2-'+srcs[1] : '');
+  // 배경은 실제로 겹친 소스 색으로, 다른 반반 셀과 같은 좌/우 분할 (하나뿐이면 단색+가운데)
+  const dualCls = 'c-dual' + (srcs.length<2 ? ' dual-solo' : '') + (srcs[0] ? ' d1-'+srcs[0] : '') + (srcs[1] ? ' d2-'+srcs[1] : '');
   return {cls:dualCls, lbl: parts.join('')};
 }
 
