@@ -917,7 +917,7 @@ async function syncAll() {
     Promise.all(rooms.map(r => fetchLvIcal(r)))
   ]);
   rooms.forEach((r,i) => { r.bookings = abResults[i].bookings; r.abBlocks = abResults[i].abBlocks; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; r.lvBookings = lvResults[i]; });
-  applySplitsAll();
+  applyCutsAll();
   icon.classList.remove('spin');
   const now = new Date();
   document.getElementById('syncTime').textContent =
@@ -933,43 +933,48 @@ async function loadBlocks() {
   } catch(e) {}
   try { manualBlocks = JSON.parse(localStorage.getItem('hana_blocks') || '[]'); } catch(e) { manualBlocks = []; }
 }
-// ── SPLITS (Trip.com 분할 반영, 읽기 전용) ──
+// ── CUTS (경계 메모: "이 호실 · 이 날짜는 손님이 바뀌는 날") — 읽기 전용 ──
+// 경계의 주인은 예약앱. 이 앱은 반영만 하고 절대 저장하지 않는다.
+// 구버전 tr_splits(기간+경계)는 예약앱이 tr_cuts(경계 날짜만)로 이관했다.
 const SPLIT_PLATFORMS = ['tr'];
 const SPLIT_KEYMAP = { ab:'bookings', bk:'bkBookings', tr:'trBookings', lv:'lvBookings' };
-let trSplits = [];
-async function loadSplits() {
+let trCuts = [];
+function dnum(p){ return p.y*10000+(p.m+1)*100+p.d; }  // 날짜 비교용 정수
+async function loadCuts() {
   try {
-    const resp = await fetch(`${PROXY_URL}/extra?key=tr_splits`);
-    if (resp.ok) { const data = await resp.json(); trSplits = Array.isArray(data) ? data : []; return; }
+    const resp = await fetch(`${PROXY_URL}/extra?key=tr_cuts`);
+    if (resp.ok) { const d = await resp.json(); if (Array.isArray(d)) { trCuts = d; return; } }
   } catch(e) {}
-  try { trSplits = JSON.parse(localStorage.getItem('hana_splits') || '[]'); } catch(e) { trSplits = []; }
+  try { const d = JSON.parse(localStorage.getItem('hana_cuts') || '[]'); trCuts = Array.isArray(d) ? d : []; }
+  catch(e) { trCuts = []; }
 }
-function splitOrigEq(b,s){
-  return b.cinY===s.origCin.y&&b.cinM===s.origCin.m&&b.cinD===s.origCin.d
-      &&b.coutY===s.origCout.y&&b.coutM===s.origCout.m&&b.coutD===s.origCout.d;
-}
+function cutsFor(roomName,plat){ return trCuts.filter(c=>c.roomName===roomName&&(c.platform||'tr')===plat); }
 function makeSeg(a,z,orig){
   return {cinY:a.y,cinM:a.m,cinD:a.d,coutY:z.y,coutM:z.m,coutD:z.d,platform:orig.platform||'trip',summary:orig.summary||'',_split:true};
 }
-// 통짜 예약을 조각으로 치환 (예약앱 로직과 동일). 원본 제거 + 조각 삽입.
-function applySplits(room){
+// 통짜 예약을 경계 날짜에서 조각으로 치환 (예약앱 applyCuts와 동일).
+// 경계가 예약 한가운데 있을 때만 자른다 — 입실일·퇴실일과 같으면 이미 나뉘어 있는 상태.
+// 예약앱과 달리 _raw_ 백업은 두지 않는다: 이 앱엔 경계 편집·재계산 경로가 없고 syncAll이 매번 새로 채운다.
+function applyCuts(room){
   for(const plat of SPLIT_PLATFORMS){
     const key=SPLIT_KEYMAP[plat];
     const arr=room[key];
     if(!Array.isArray(arr)) continue;
-    const mine=trSplits.filter(s=>s.roomName===room.name&&(s.platform||'tr')===plat);
+    const mine=cutsFor(room.name,plat);
     if(!mine.length) continue;
     const out=[];
     for(const b of arr){
       if(b._split){ out.push(b); continue; }
-      const s=mine.find(x=>splitOrigEq(b,x));
-      if(s){ const pts=[s.origCin,...s.boundaries,s.origCout]; for(let i=0;i<pts.length-1;i++) out.push(makeSeg(pts[i],pts[i+1],b)); }
-      else out.push(b);
+      const bs=dnum({y:b.cinY,m:b.cinM,d:b.cinD}), be=dnum({y:b.coutY,m:b.coutM,d:b.coutD});
+      const inside=mine.filter(c=>dnum(c)>bs&&dnum(c)<be).sort((x,z)=>dnum(x)-dnum(z));
+      if(!inside.length){ out.push(b); continue; }
+      const pts=[{y:b.cinY,m:b.cinM,d:b.cinD},...inside.map(c=>({y:c.y,m:c.m,d:c.d})),{y:b.coutY,m:b.coutM,d:b.coutD}];
+      for(let i=0;i<pts.length-1;i++) out.push(makeSeg(pts[i],pts[i+1],b));
     }
     room[key]=out;
   }
 }
-function applySplitsAll(){ for(const r of rooms) applySplits(r); }
+function applyCutsAll(){ for(const r of rooms) applyCuts(r); }
 
 function blockTypeFor(roomName, y, m, d) {
   const cur = new Date(y, m, d);
@@ -2056,7 +2061,7 @@ document.getElementById('addRoomBtn').onclick = () => {
 
 async function init() {
   const t = today(); curY=t.y; curM=t.m;
-  await Promise.all([loadRooms(), loadBlocks(), loadSplits()]);
+  await Promise.all([loadRooms(), loadBlocks(), loadCuts()]);
   if (!rooms.length) {
     const defaults = ['302호','402호','501호','503호','601호','603호','701호','702호','703호'];
     defaults.forEach((name,i) => rooms.push({name, url:'', bkUrl:'', trUrl:'', lvUrl:'', color:COLORS[i], bookings:[], bkBookings:[], trBookings:[], lvBookings:[]}));
