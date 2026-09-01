@@ -891,7 +891,10 @@ async function fetchBkIcal(room) {
 async function fetchTrIcal(room) {
   if (!room.trUrl || room.trUrl === '') return [];
   try {
-    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.trUrl)}`);
+    // fix=tr — 트립 '전략 제어·당일 객실 마감'이 매일 18시에 거는 가짜 하룻밤을 워커가 걷어낸 판을 받는다.
+    // 안 붙이면 저녁 6시~아침 7시 사이 입실이 하루 당겨지거나 퇴실이 하루 밀려 보인다 (05-known-issues #28).
+    // 예약앱은 /bookings 를 읽어 이미 교정본을 받는다. 두 앱 표시를 같게 유지하려면 이 줄이 필요하다.
+    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.trUrl)}&fix=tr&room=${encodeURIComponent(room.name)}`);
     if (!resp.ok) return [];
     return parseIcalTrip(await resp.text());
   } catch(e) { return []; }
