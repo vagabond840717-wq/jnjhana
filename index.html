@@ -882,7 +882,9 @@ async function fetchIcal(room) {
 async function fetchBkIcal(room) {
   if (!room.bkUrl || room.bkUrl === '') return [];
   try {
-    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.bkUrl)}`);
+    // fix=bk — 부킹닷컴은 투숙 중인 손님이라도 지나간 밤을 잘라 보낸다(재고 목록이라서).
+    // 안 붙이면 어제 들어온 손님이 오늘 또 체크인으로 보여 청소가 헛잡힌다 (05-known-issues #29).
+    const resp = await fetch(`${PROXY_URL}?url=${encodeURIComponent(room.bkUrl)}&fix=bk&room=${encodeURIComponent(room.name)}`);
     if (!resp.ok) return [];
     return parseIcalBooking(await resp.text());
   } catch(e) { return []; }
