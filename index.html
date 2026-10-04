@@ -1596,7 +1596,7 @@ async function loadExtra(key) {
 // ── 메모 머리표 · 메모 목록 (memo-indicator) ──
 // 예약앱 달력 📝 는 메모 목록(memo_index)을 본다 → 여기서 메모를 쓰고 지울 때도 목록 한 줄을 넣고 뺀다.
 // 청소앱은 📝 를 그리지 않는다. 날짜 이동·30일 정리 판정은 워커 한 곳에만 (#2)
-const MEMO_CH   = {airbnb:'ab', booking:'bk', trip:'tr', lv:'lv'};
+const MEMO_CH   = {airbnb:'ab', 'ab-block':'ab', booking:'bk', trip:'tr', lv:'lv', block:'bl'};
 const MEMO_ICON = {ab:'✈', bk:'🏨', tr:'🌐', lv:'🏡', bl:'🔒'};
 const ymd8 = (y,m,d) => `${y}${String(m+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
 // "🏨 10/20~10/28" — 메모를 쓴 순간의 예약 (옛 메모는 지금 예약으로 대신)
@@ -1739,6 +1739,17 @@ async function openDetail(ri, y, m, d) {
   const bkBks = findAllBookingsIn(r.bkBookings || [], y, m, d);
   const trBks = findAllBookingsIn(r.trBookings || [], y, m, d);
   const lvBks = findAllBookingsIn(r.lvBookings || [], y, m, d);
+  // 블락도 예약앱과 같은 서랍을 연다 — 에어비앤비 취소잔여 블락 <호실>|<시작일> / 수동 블락 <호실>|<시작일>_bl
+  // 수동 블락은 끝날짜를 포함하므로 퇴실 자리(cout)는 끝날짜 다음날 (예약앱 blkEntry 와 같다)
+  const abBlkBks = findAllBookingsIn(r.abBlocks || [], y, m, d);
+  const blkBks = manualBlocks.filter(bl => {
+    if (bl.roomName !== r.name) return false;
+    const cur = new Date(y, m, d);
+    return cur >= new Date(bl.startY, bl.startM, bl.startD) && cur <= new Date(bl.endY, bl.endM, bl.endD);
+  }).map(bl => {
+    const e = new Date(bl.endY, bl.endM, bl.endD + 1);
+    return { cinY:bl.startY, cinM:bl.startM, cinD:bl.startD, coutY:e.getFullYear(), coutM:e.getMonth(), coutD:e.getDate(), reason: bl.reason || '' };
+  });
 
   document.getElementById('detailTitle').innerHTML =
     `<span class="room-badge">${r.name}</span>${dateStr(y,m,d)}`;
@@ -1757,8 +1768,14 @@ async function openDetail(ri, y, m, d) {
       ? `<span style="color:var(--text3);font-size:10px;">🏨 Booking</span>`
       : platform === 'trip'
       ? `<span style="color:var(--text3);font-size:10px;">🌐 Trip.com</span>`
+      : platform === 'ab-block'
+      ? `<span style="color:var(--text3);font-size:10px;">🚫 Airbnb 블락</span>`
+      : platform === 'block'
+      ? `<span style="color:var(--text3);font-size:10px;">🔒${b.reason ? ' ' + b.reason.replace(/</g,'&lt;') : ''}</span>`
       : `<span style="color:var(--text3);font-size:10px;">🏡 리브애니웨어</span>`;
-    const roleTag = isOut
+    const roleTag = platform === 'block'
+      ? `<span style="font-size:13px;font-weight:700;color:var(--text2);letter-spacing:0.02em;">블락</span>`
+      : isOut
       ? `<span style="font-size:13px;font-weight:700;color:var(--out);letter-spacing:0.02em;">체크아웃</span>`
       : isIn
       ? `<span style="font-size:13px;font-weight:700;color:var(--in);letter-spacing:0.02em;">체크인</span>`
@@ -1784,7 +1801,9 @@ async function openDetail(ri, y, m, d) {
   bkBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'booking', y, m, d));
   trBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'trip', y, m, d));
   lvBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'lv', y, m, d));
-  if (!abBks.length && !bkBks.length && !trBks.length && !lvBks.length) bkInfoHtml = `<div class="no-bk">이 날짜에 예약 없음</div>`;
+  abBlkBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'ab-block', y, m, d));
+  blkBks.forEach(b => bkInfoHtml += bkInfoBlock(b, 'block', y, m, d));
+  if (!bkInfoHtml) bkInfoHtml = `<div class="no-bk">이 날짜에 예약 없음</div>`;
   bkBoxEl.innerHTML = bkInfoHtml;
 
   detailKeys = [];
@@ -1812,8 +1831,21 @@ async function openDetail(ri, y, m, d) {
     const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
     detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'lv', b, room:r.name});
   });
+  abBlkBks.forEach((b) => {
+    const key = bkKey(r.name, b);
+    const isOut = b.coutY===y && b.coutM===m && b.coutD===d;
+    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
+    detailKeys.push({key, role: isOut ? 'out' : isIn ? 'in' : null, platform:'ab-block', b, room:r.name});
+  });
+  blkBks.forEach((b) => {
+    const key = bkKey(r.name, b) + '_bl';
+    const isIn  = b.cinY===y  && b.cinM===m  && b.cinD===d;
+    detailKeys.push({key, role: isIn ? 'in' : null, platform:'block', b, room:r.name});
+  });
+  detailKeys = detailKeys.filter((k, i, arr) => arr.findIndex(o => o.key === k.key) === i);   // 같은 서랍은 한 번만
   if (!detailKeys.length) {
-    const fallback = `${r.name}|${y}${String(m+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
+    // 예약 없는 날 — 예약앱과 같은 날짜 서랍 (점 찍힌 날짜)
+    const fallback = `${r.name}|${dateStr(y,m,d)}`;
     detailKeys.push({key: fallback, role: null, platform:'none'});
   }
 
@@ -1958,7 +1990,7 @@ function renderMemoUI() {
 
     let html = `<div class="memo-bk-section" data-ki="${ki}" style="flex:1;min-width:0;">`;
     if (detailKeys.length > 1 && (role === 'out' || role === 'in')) {
-      html += `<div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:8px;">${labelText}${platform==='booking'?' 🏨':platform==='trip'?' 🌐':platform==='lv'?' 🏡':''}</div>`;
+      html += `<div style="font-size:10px;font-weight:700;color:${labelColor};letter-spacing:0.06em;margin-bottom:8px;">${labelText}${platform==='booking'?' 🏨':platform==='trip'?' 🌐':platform==='lv'?' 🏡':platform==='block'?' 🔒':''}</div>`;
     }
     if (memos.length) {
       html += memos.map((memo, i) => `
