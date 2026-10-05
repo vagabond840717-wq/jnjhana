@@ -175,6 +175,8 @@ body {
   position: relative;
   line-height: 1;
 }
+.memo-badge { position: absolute; top: -1px; font-size: 9px; line-height: 1; z-index: 2; pointer-events: none; filter: drop-shadow(0 0 1px rgba(0,0,0,0.6)); }
+.memo-badge.mb-r { right: 0; } .memo-badge.mb-c { left: calc(50% - 10px); }
 .cell-icon {
   font-size: 9px; line-height: 1;
   display: block; pointer-events: none;
@@ -915,6 +917,7 @@ async function syncAll() {
   const icon = document.getElementById('syncIcon');
   icon.classList.add('spin');
   document.getElementById('syncTime').textContent = '불러오는 중...';
+  const memoP = loadMemoIndex();   // 다른 기기에서 쓴 메모 📝 — 예약 받기와 같이 돌린다
   const [abResults, bkResults, trResults, lvResults] = await Promise.all([
     Promise.all(rooms.map(r => fetchIcal(r))),
     Promise.all(rooms.map(r => fetchBkIcal(r))),
@@ -923,6 +926,7 @@ async function syncAll() {
   ]);
   rooms.forEach((r,i) => { r.bookings = abResults[i].bookings; r.abBlocks = abResults[i].abBlocks; r.bkBookings = bkResults[i]; r.trBookings = trResults[i]; r.lvBookings = lvResults[i]; });
   applyCutsAll();
+  await memoP;
   icon.classList.remove('spin');
   const now = new Date();
   document.getElementById('syncTime').textContent =
@@ -1048,7 +1052,13 @@ function bothLbl(outIcon, inIcon, inTxt) {
   return `<span style="display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 1px;"><span style="font-size:7px;line-height:1;">아웃</span>${ic}<span style="font-size:7px;line-height:1;">${inTxt || '인'}</span></span>`;
 }
 
+// 📝 — 칸 색은 그대로, 배지만 얹는다 (예약앱 cellClsAndLbl 과 같다)
 function cellClsAndLbl(room, day, y, m) {
+  const r = cellClsAndLblBase(room, day, y, m);
+  for (const pos of memoBadges(room, day, y, m)) r.lbl += `<span class="memo-badge mb-${pos}">📝</span>`;
+  return r;
+}
+function cellClsAndLblBase(room, day, y, m) {
   const ab    = cellTypeFor(room.bookings   || [], day, y, m);
   const abBlk = cellTypeForBlock(room.abBlocks || [], day, y, m);
   const bk    = cellTypeFor(room.bkBookings || [], day, y, m);
@@ -1494,6 +1504,7 @@ function renderMulti() {
 }
 
 function render() {
+  _memoRanges = null;
   const isMulti = viewMode === 'multi';
   document.getElementById('monthDisplay').textContent = `${curY}. ${String(curM+1).padStart(2,'0')}`;
   document.getElementById('prevBtn').style.visibility = isMulti ? 'hidden' : 'visible';
@@ -1595,7 +1606,7 @@ async function loadExtra(key) {
 
 // ── 메모 머리표 · 메모 목록 (memo-indicator) ──
 // 예약앱 달력 📝 는 메모 목록(memo_index)을 본다 → 여기서 메모를 쓰고 지울 때도 목록 한 줄을 넣고 뺀다.
-// 청소앱은 📝 를 그리지 않는다. 날짜 이동·30일 정리 판정은 워커 한 곳에만 (#2)
+// 달력 📝 는 예약앱과 같은 규칙으로 그린다 (2026-10-05). 날짜 이동·30일 정리 판정은 워커 한 곳에만 (#2)
 const MEMO_CH   = {airbnb:'ab', 'ab-block':'ab', booking:'bk', trip:'tr', lv:'lv', block:'bl'};
 const MEMO_ICON = {ab:'✈', bk:'🏨', tr:'🌐', lv:'🏡', bl:'🔒'};
 const ymd8 = (y,m,d) => `${y}${String(m+1).padStart(2,'0')}${String(d).padStart(2,'0')}`;
@@ -1629,6 +1640,59 @@ async function syncMemoIndex(e) {
   const out = list.filter(x => x.key !== e.key);
   if (has) out.push({ key: e.key, room: e.room, ...memoTag(e) });
   fetch(`${PROXY_URL}/extra`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key:'memo_index', data: out }) }).catch(() => {});
+  memoIndex = out; render();   // 달력 📝 바로 반영
+}
+
+// ── 달력 📝 (예약앱 memoRangesFor·memoBadges 와 같은 규칙 — 바꾸면 두 앱 동시 수정, #2) ──
+let memoIndex = [];
+let _memoRanges = null;   // render 마다 다시 만든다
+async function loadMemoIndex() {
+  try {
+    const resp = await fetch(`${PROXY_URL}/extra?key=memo_index`);
+    if (resp.ok) {
+      const d = await resp.json();
+      if (Array.isArray(d)) { memoIndex = d; try { localStorage.setItem('hana_memo_index', JSON.stringify(d)); } catch (e) {} return; }
+      if (d && Array.isArray(d.memos) && !d.memos.length) { memoIndex = []; return; }   // 아직 목록이 없다
+    }
+  } catch (e) {}
+  try { const d = JSON.parse(localStorage.getItem('hana_memo_index') || 'null'); if (Array.isArray(d)) memoIndex = d; } catch (e) {}
+}
+// 목록 한 줄 → 지금 화면의 예약 기간. 예약이 사라졌으면 📝 안 뜸 (메모는 그대로)
+function memoRangesFor(room) {
+  if (!_memoRanges) _memoRanges = {};
+  if (_memoRanges[room.name]) return _memoRanges[room.name];
+  const out = [];
+  for (const row of memoIndex) {
+    if (row.room !== room.name) continue;
+    if (row.ch === 'bl') {
+      const b = manualBlocks.find(b => b.roomName === room.name && ymd8(b.startY, b.startM, b.startD) === row.cin);
+      if (b) out.push({ a: +row.cin, z: +ymd8(b.endY, b.endM, b.endD), blk: true });
+      continue;
+    }
+    const arr = { ab: [...(room.bookings || []), ...(room.abBlocks || [])], bk: room.bkBookings, tr: room.trBookings, lv: room.lvBookings }[row.ch] || [];
+    let b = row.uid ? arr.find(x => x.uid === row.uid) : null;
+    if (!b) b = arr.find(x => ymd8(x.cinY, x.cinM, x.cinD) === row.cin);
+    if (b) out.push({ a: +ymd8(b.cinY, b.cinM, b.cinD), z: +ymd8(b.coutY, b.coutM, b.coutD), blk: false });
+  }
+  return _memoRanges[room.name] = out;
+}
+// 그 칸에 붙일 📝 위치들: 'r' 오른쪽 위 / 'c' 가운데 위(반반 칸의 나가는 손님 쪽)
+function memoBadges(room, d, y, m) {
+  if (!memoIndex.length) return [];
+  const cur = dnum({ y, m, d });
+  let whole = false, out = false, inn = false;
+  for (const g of memoRangesFor(room)) {
+    if (cur < g.a || cur > g.z) continue;
+    if (g.blk) { if (cur === g.a) inn = true; else whole = true; continue; }
+    if (cur === g.z) out = true; else if (cur === g.a) inn = true; else whole = true;
+  }
+  if (whole || (inn && !out)) return ['r'];
+  if (!out) return [];
+  const isIn = b => ymd8(b.cinY, b.cinM, b.cinD) === String(cur);
+  const dayHasIn = [room.bookings, room.abBlocks, room.bkBookings, room.trBookings, room.lvBookings].some(a => (a || []).some(isIn))
+    || manualBlocks.some(b => b.roomName === room.name && ymd8(b.startY, b.startM, b.startD) === String(cur));
+  if (!dayHasIn) return ['r'];
+  return inn ? ['c', 'r'] : ['c'];
 }
 
 let detailKeys = [];
@@ -2139,7 +2203,7 @@ document.getElementById('addRoomBtn').onclick = () => {
 
 async function init() {
   const t = today(); curY=t.y; curM=t.m;
-  await Promise.all([loadRooms(), loadBlocks(), loadCuts()]);
+  await Promise.all([loadRooms(), loadBlocks(), loadCuts(), loadMemoIndex()]);
   if (!rooms.length) {
     const defaults = ['302호','402호','501호','503호','601호','603호','701호','702호','703호'];
     defaults.forEach((name,i) => rooms.push({name, url:'', bkUrl:'', trUrl:'', lvUrl:'', color:COLORS[i], bookings:[], bkBookings:[], trBookings:[], lvBookings:[]}));
